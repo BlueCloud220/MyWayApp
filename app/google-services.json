@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "377674498783",
+    "project_id": "mywayapp-21315",
+    "storage_bucket": "mywayapp-21315.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:377674498783:android:01e197eb531ebfee519f6a",
+        "android_client_info": {
+          "package_name": "com.example.mywayapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClKLDhE79jf6ru2WKCTMzpRQqWT2z3qmo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
