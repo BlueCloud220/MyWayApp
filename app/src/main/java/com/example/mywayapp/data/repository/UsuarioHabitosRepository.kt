@@ -15,7 +15,8 @@ object FirebaseManagerUsuarioHabitos {
 
 class UsuarioHabitosRepository {
 
-    private val collectionUsuarioHabitosRef = FirebaseManagerUsuarioHabitos.getUsuarioHabitosCollection()
+    private val collectionUsuarioHabitosRef =
+        FirebaseManagerUsuarioHabitos.getUsuarioHabitosCollection()
 
     private val _usuarioHabitosList = MutableStateFlow<List<UsuarioHabitos>>(emptyList())
     val usuarioHabitosList: StateFlow<List<UsuarioHabitos>> = _usuarioHabitosList
@@ -56,6 +57,7 @@ class UsuarioHabitosRepository {
             onComplete(false, it.message ?: "Error al verificar la existencia del hábito")
         }
     }
+
     fun deleteUsuarioHabito(uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
         collectionUsuarioHabitosRef
             .document(uidUsuario)  // Aquí deberías tener el UID del usuario

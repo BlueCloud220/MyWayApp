@@ -78,6 +78,14 @@ class UsuariosViewModel : ViewModel() {
         repository.updateUsuario(usuario, onComplete)
     }
 
+    // Actualizar el token FCM
+    fun updateTokenFCM(token: String, onComplete: (Boolean, String) -> Unit) {
+        _state.value = _state.value.copy(tokenFCM = token)
+
+        updateUsuario(onComplete)
+    }
+
+
     fun onValueChange(field: String, value: String) {
         _state.value = when (field) {
             "uidUsuario" -> _state.value.copy(uidUsuario = value)

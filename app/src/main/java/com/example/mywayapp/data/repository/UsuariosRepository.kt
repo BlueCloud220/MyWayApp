@@ -1,7 +1,6 @@
 package com.example.mywayapp.data.repository
 
 import com.example.mywayapp.model.Usuarios
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
@@ -24,21 +23,6 @@ class UsuariosRepository {
     private val _usuario = MutableStateFlow(Usuarios())
     val usuario: StateFlow<Usuarios> = _usuario
 
-    fun fetchUsuarioAuth() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-
-        if (currentUser != null) {
-            collectionRef.document(currentUser.uid).get()
-                .addOnSuccessListener { snapshot ->
-                    val usuario = snapshot.toObject<Usuarios>()
-                    _usuario.value = usuario ?: Usuarios()
-                }
-                .addOnFailureListener {
-                    _usuario.value = Usuarios()
-                }
-        }
-    }
-
     fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
         collectionRef.whereEqualTo("nombreUsuario", nombreUsuario)
             .whereEqualTo("contrasena", password).get()
@@ -51,43 +35,14 @@ class UsuariosRepository {
             }
     }
 
-    /*fun fetchUsuarioByCredentials(nombreUsuario: String, contrasenaIngresada: String, onComplete: (Usuarios?) -> Unit) {
-        collectionRef.whereEqualTo("nombreUsuario", nombreUsuario).limit(1).get()
-            .addOnSuccessListener { documents ->
-                if (!documents.isEmpty) {
-                    val usuario = documents.documents[0].toObject(Usuarios::class.java)
-                    if (usuario != null && verifyPassword(contrasenaIngresada, usuario.contrasena)) {
-                        onComplete(usuario) // Si la verificación es exitosa, se retorna el usuario.
-                    } else {
-                        onComplete(null) // Si la contraseña no coincide, retorna nulo.
-                    }
-                } else {
-                    onComplete(null) // Si no se encuentra el usuario, retorna nulo.
-                }
-            }
-            .addOnFailureListener {
-                onComplete(null) // En caso de error en la consulta, también retorna nulo.
-            }
-    }
-    usiel
-    fun fetchUsuarioById(uidUsuario: String) {
-        collectionRef.document(uidUsuario).get()
-            .addOnSuccessListener { snapshot ->
-                val usuario = snapshot.toObject<Usuarios>()
-                _usuario.value = usuario ?: Usuarios()
-            }
-            .addOnFailureListener {
-                _usuario.value = Usuarios()
-            }
-    }*/
-
     fun saveUsuario(usuario: Usuarios, onComplete: (Boolean, String) -> Unit) {
         val batch = FirebaseFirestore.getInstance().batch()
 
-        val newDocRef = collectionRef.document()
-        batch.set(newDocRef, usuario)
-
+        val newDocRef =
+            collectionRef.document()  // Aquí se crea un nuevo documento con un ID generado automáticamente
         val updatedUsuario = usuario.copy(uidUsuario = newDocRef.id)
+
+        // Asignamos los datos del usuario con el UID actualizado
         batch.set(newDocRef, updatedUsuario)
 
         batch.commit()
@@ -110,12 +65,18 @@ class UsuariosRepository {
     }
 
     fun updateUsuario(usuario: Usuarios, onComplete: (Boolean, String) -> Unit) {
-        collectionRef.document(usuario.uidUsuario).set(usuario)
-            .addOnSuccessListener {
-                onComplete(true, "Perfil editado con éxito")
-            }
-            .addOnFailureListener { exception ->
-                onComplete(false, exception.message ?: "Error desconocido")
-            }
+        if (usuario.uidUsuario.isNotEmpty()) {
+            collectionRef.document(usuario.uidUsuario)
+                .set(usuario)
+                .addOnSuccessListener {
+                    onComplete(true, "Perfil editado con éxito")
+                }
+                .addOnFailureListener { exception ->
+                    onComplete(false, exception.message ?: "Error desconocido")
+                }
+        } else {
+            onComplete(false, "El ID de usuario es inválido.")
+        }
     }
+
 }

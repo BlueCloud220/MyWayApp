@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mywayapp.components.Space
@@ -53,9 +52,11 @@ fun UsuarioHabitoItem(
     navController: NavController,
     usuarioHabito: com.example.mywayapp.model.UsuarioHabitos
 ) {
-    val habitName = HabitName(usuarioHabito.uidHabito) // Llama al composable que obtiene el nombre real del hábito a partir del uid
+    val habitName =
+        HabitName(usuarioHabito.uidHabito) // Llama al composable que obtiene el nombre real del hábito a partir del uid
     val (progreso, progresoMaximo) = calcularProgreso(usuarioHabito.fechaInicio) // Calculamos el progreso y el máximo
-    val progresoPorcentaje = (progreso.toFloat() / progresoMaximo.toFloat()) // Progreso como porcentaje
+    val progresoPorcentaje =
+        (progreso.toFloat() / progresoMaximo.toFloat()) // Progreso como porcentaje
     val motivacion = when {
         progresoPorcentaje < 0.2 -> "¡Vamos! Empieza el hábito."
         progresoPorcentaje < 0.5 -> "¡Sigues avanzando!"
@@ -74,7 +75,10 @@ fun UsuarioHabitoItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .shadow(4.dp, shape = MaterialTheme.shapes.medium), // Usamos `shadow()` en lugar de `CardDefaults.elevation`
+            .shadow(
+                4.dp,
+                shape = MaterialTheme.shapes.medium
+            ), // Usamos `shadow()` en lugar de `CardDefaults.elevation`
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -109,7 +113,8 @@ fun UsuarioHabitoItem(
             }
             Space(12.dp)
 
-            LinearProgressIndicator( // Barra de progreso
+            LinearProgressIndicator(
+                // Barra de progreso
                 progress = progresoPorcentaje,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,7 +137,8 @@ fun UsuarioHabitoItem(
 @RequiresApi(Build.VERSION_CODES.O)
 fun calcularProgreso(fechaInicio: String): Pair<Int, Int> {
     return try {
-        val fechaInicioParsed = LocalDate.parse(fechaInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        val fechaInicioParsed =
+            LocalDate.parse(fechaInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         val fechaActual = LocalDate.now()
         val diasTranscurridos = ChronoUnit.DAYS.between(fechaInicioParsed, fechaActual).toInt()
 
@@ -156,7 +162,8 @@ fun calcularProgreso(fechaInicio: String): Pair<Int, Int> {
 fun calcularFechaMeta(fechaInicio: String, progresoMaximo: Int): String {
     return try {
         // Convertimos la fecha de inicio a LocalDate
-        val fechaInicioParsed = LocalDate.parse(fechaInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        val fechaInicioParsed =
+            LocalDate.parse(fechaInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
         // Sumamos el número máximo de días al progreso
         val fechaMeta = fechaInicioParsed.plusDays(progresoMaximo.toLong())
         // Retornamos la fecha de meta en formato dd/MM/yyyy

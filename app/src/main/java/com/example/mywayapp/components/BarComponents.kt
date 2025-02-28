@@ -22,7 +22,9 @@ fun TitleBar(name: String) {
 @Composable
 fun ActionButton(onClick: () -> Unit) {
     FloatingActionButton(
-        onClick = { onClick() }, containerColor =  Color(0.129f, 0.302f, 0.986f, 1f), contentColor = Color.White
+        onClick = { onClick() },
+        containerColor = Color(0.129f, 0.302f, 0.986f, 1f),
+        contentColor = Color.White
     ) {
         Icon(imageVector = Icons.Default.Add, contentDescription = "Agrega")
     }

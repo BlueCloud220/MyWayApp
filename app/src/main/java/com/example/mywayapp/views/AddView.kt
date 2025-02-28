@@ -31,7 +31,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mywayapp.components.Alert
@@ -39,14 +38,12 @@ import com.example.mywayapp.components.DatePickerDocked
 import com.example.mywayapp.components.HabitoDropdown
 import com.example.mywayapp.components.MainButton
 import com.example.mywayapp.components.MainIconButton
-import com.example.mywayapp.components.MainTextField
 import com.example.mywayapp.components.ReadOnlyTextField
 import com.example.mywayapp.components.Space
 import com.example.mywayapp.components.SpaceW
 import com.example.mywayapp.components.TitleBar
 import com.example.mywayapp.model.Habitos
 import com.example.mywayapp.model.Usuarios
-import com.example.mywayapp.ui.theme.Purple40
 import com.example.mywayapp.viewModels.HabitosViewModel
 import com.example.mywayapp.viewModels.UsuarioHabitosViewModel
 import java.time.LocalDate
@@ -61,7 +58,8 @@ fun AddView(
     habitosViewModel: HabitosViewModel,
     usuario: Usuarios  // Recibimos el usuario logueado
 ) {
-    val usuarioHabitosViewModel = remember { UsuarioHabitosViewModel() } // Instanciamos el ViewModel para gestionar la relación usuario-hábito
+    val usuarioHabitosViewModel =
+        remember { UsuarioHabitosViewModel() } // Instanciamos el ViewModel para gestionar la relación usuario-hábito
 
     Scaffold(
         topBar = {
@@ -104,7 +102,8 @@ fun ContentAddView(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    val showErrorAlert = rememberSaveable { mutableStateOf(false) } // Estados para controlar la alerta de error en el guardado
+    val showErrorAlert =
+        rememberSaveable { mutableStateOf(false) } // Estados para controlar la alerta de error en el guardado
     val errorAlertMessage = rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) { // Actualizamos la fecha si está vacía para que el estado se actualice y pase la validación
@@ -123,7 +122,8 @@ fun ContentAddView(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val selectedNombre = rememberSaveable { mutableStateOf(habitosState.nombre) } // Variables para almacenar la selección actual
+        val selectedNombre =
+            rememberSaveable { mutableStateOf(habitosState.nombre) } // Variables para almacenar la selección actual
         val selectedDescripcion = rememberSaveable { mutableStateOf(habitosState.descripcion) }
 
         HabitoDropdown(viewModel = habitosViewModel) { nombre, descripcion, uidHabito -> // Se asume que el callback del Dropdown retorna también el uid del hábito
@@ -166,7 +166,10 @@ fun ContentAddView(
                 color = Color(0.984f, 0.988f, 0.988f, 1f)
             ) {
                 if (usuarioHabitosState.uidHabito.isNotEmpty() && usuarioHabitosState.fechaInicio.isNotEmpty()) {
-                    usuarioHabitosViewModel.onValueChange("uidUsuario", usuario.uidUsuario) // Asignamos el uid del usuario logueado al estado de usuario-hábito
+                    usuarioHabitosViewModel.onValueChange(
+                        "uidUsuario",
+                        usuario.uidUsuario
+                    ) // Asignamos el uid del usuario logueado al estado de usuario-hábito
                     usuarioHabitosViewModel.saveUsuarioHabito { success, message ->
                         if (success) {
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

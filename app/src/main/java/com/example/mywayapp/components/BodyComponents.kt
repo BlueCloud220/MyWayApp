@@ -121,10 +121,12 @@ fun Alert(
             dismissText?.let {
                 Button(
                     onClick = { onDismissClick?.invoke() },
-                    colors = ButtonColors(Color(1f, 0.329f, 0.439f, 1f),
+                    colors = ButtonColors(
+                        Color(1f, 0.329f, 0.439f, 1f),
                         Color(0.984f, 0.988f, 0.988f, 1f),
                         Purple80,
-                        Color(0.984f, 0.988f, 0.988f, 1f))
+                        Color(0.984f, 0.988f, 0.988f, 1f)
+                    )
                 ) {
                     Text(text = it)
                 }
@@ -133,10 +135,12 @@ fun Alert(
         dismissButton = {
             Button(
                 onClick = { onConfirmClick() },
-                colors = ButtonColors(Color(0.129f, 0.302f, 0.986f, 1f),
+                colors = ButtonColors(
+                    Color(0.129f, 0.302f, 0.986f, 1f),
                     Color(0.984f, 0.988f, 0.988f, 1f),
                     Purple80,
-                    Color(0.984f, 0.988f, 0.988f, 1f))
+                    Color(0.984f, 0.988f, 0.988f, 1f)
+                )
             ) {
                 Text(text = confirmText)
             }
@@ -221,7 +225,10 @@ fun DatePickerModal(
 }
 
 @Composable
-fun HabitoDropdown(viewModel: HabitosViewModel, onHabitoSelected: (nombre: String, descripcion: String, uidHabito: String) -> Unit) {
+fun HabitoDropdown(
+    viewModel: HabitosViewModel,
+    onHabitoSelected: (nombre: String, descripcion: String, uidHabito: String) -> Unit
+) {
     val habitosList = viewModel.habitos.collectAsState(initial = emptyList())
     var expanded by remember { mutableStateOf(false) }
     var selectedHabito by rememberSaveable { mutableStateOf("") } // Ahora se guarda la selección

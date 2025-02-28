@@ -38,7 +38,6 @@ import com.example.mywayapp.components.MainTextField
 import com.example.mywayapp.components.Space
 import com.example.mywayapp.components.SpaceW
 import com.example.mywayapp.components.TitleBar
-import com.example.mywayapp.ui.theme.Purple40
 import com.example.mywayapp.viewModels.HabitosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,8 +118,11 @@ fun ContentUpdateView(
         Row(
             modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center
         ) {
-            MainButton(name = "Editar", backColor = Color(0.129f, 0.302f, 0.986f, 1f)
-                , color = Color(0.984f, 0.988f, 0.988f, 1f)) {
+            MainButton(
+                name = "Editar",
+                backColor = Color(0.129f, 0.302f, 0.986f, 1f),
+                color = Color(0.984f, 0.988f, 0.988f, 1f)
+            ) {
                 if (state.nombre != "" && state.descripcion != "" && state.fechaInicio != "") {
                     viewModel.updateHabito { success, message ->
                         if (success) {
@@ -139,7 +141,11 @@ fun ContentUpdateView(
                 }
             }
             SpaceW()
-            MainButton(name = "Cancelar", backColor = Color(1f, 0.329f, 0.439f, 1f), color = Color.White) {
+            MainButton(
+                name = "Cancelar",
+                backColor = Color(1f, 0.329f, 0.439f, 1f),
+                color = Color.White
+            ) {
                 navController.popBackStack()
             }
         }

@@ -56,8 +56,7 @@ fun NavManager(
             route = "UpdateProfile/{uidUsuario}",
             arguments = listOf(navArgument("uidUsuario") { type = NavType.StringType })
         ) { backStackEntry ->
-            val uidUsuario = backStackEntry.arguments?.getString("uidUsuario") ?: ""
-            ProfileView(navController, uidUsuario, viewModelUsuarios)
+            ProfileView(navController, viewModelUsuarios)
         }
 
     }

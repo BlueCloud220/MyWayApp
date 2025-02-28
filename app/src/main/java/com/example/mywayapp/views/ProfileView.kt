@@ -2,18 +2,24 @@ package com.example.mywayapp.views
 
 import android.annotation.SuppressLint
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -21,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
@@ -36,13 +43,12 @@ import com.example.mywayapp.components.MainTextField
 import com.example.mywayapp.components.Space
 import com.example.mywayapp.components.SpaceW
 import com.example.mywayapp.components.TitleBar
-import com.example.mywayapp.ui.theme.Purple40
 import com.example.mywayapp.viewModels.UsuariosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun ProfileView(navController: NavController, uidUsuario: String, viewModel: UsuariosViewModel) {
+fun ProfileView(navController: NavController, viewModel: UsuariosViewModel) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(title = { TitleBar(name = "Editar Perfil") },
@@ -56,7 +62,7 @@ fun ProfileView(navController: NavController, uidUsuario: String, viewModel: Usu
                 })
         },
     ) {
-        ContentProfileView(paddingValues = it, navController, uidUsuario, viewModel)
+        ContentProfileView(paddingValues = it, navController, viewModel)
     }
 }
 
@@ -64,13 +70,8 @@ fun ProfileView(navController: NavController, uidUsuario: String, viewModel: Usu
 fun ContentProfileView(
     paddingValues: PaddingValues,
     navController: NavController,
-    uidUsuario: String,
     viewModel: UsuariosViewModel
 ) {
-//    LaunchedEffect(uidUsuario) {
-//        viewModel.loadUsuario(uidUsuario)
-//    }
-
     val state = viewModel.state.collectAsState().value
     val nombreFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -84,6 +85,41 @@ fun ContentProfileView(
             .fillMaxSize()
             .verticalScroll(scrollState), horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Space(16.dp)
+
+        if (state.iconoPerfil != "") {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = "Logo",
+                    tint = Color.White,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(Color(0f, 0.129f, 0.302f, 1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = "Logo",
+                    tint = Color.White,
+                    modifier = Modifier.size(50.dp)
+                )
+            }
+        }
+
+        Space(16.dp)
+
         MainTextField(
             value = state.nombre,
             onValue = { viewModel.onValueChange("nombre", it) },
@@ -109,7 +145,11 @@ fun ContentProfileView(
         Row(
             modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center
         ) {
-            MainButton(name = "Guardar", backColor = Color(0.129f, 0.302f, 0.986f, 1f), color = Color.White) {
+            MainButton(
+                name = "Guardar",
+                backColor = Color(0.129f, 0.302f, 0.986f, 1f),
+                color = Color.White
+            ) {
                 if (state.nombre != "" && state.apellido != "") {
                     viewModel.updateUsuario { success, message ->
                         if (success) {
@@ -127,7 +167,11 @@ fun ContentProfileView(
                 }
             }
             SpaceW()
-            MainButton(name = "Cancelar", backColor = Color(1f, 0.329f, 0.439f, 1f), color = Color.White) {
+            MainButton(
+                name = "Cancelar",
+                backColor = Color(1f, 0.329f, 0.439f, 1f),
+                color = Color.White
+            ) {
                 navController.popBackStack()
             }
         }

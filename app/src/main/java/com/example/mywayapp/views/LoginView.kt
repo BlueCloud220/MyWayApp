@@ -1,5 +1,6 @@
 package com.example.mywayapp.views
 
+import android.content.Context.MODE_PRIVATE
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -65,23 +66,30 @@ fun LoginView(navController: NavController, viewModel: UsuariosViewModel) {
     val authSuccess by viewModel.authSuccess.collectAsState()
     val authError by viewModel.authError.collectAsState()
 
-
     LaunchedEffect(authSuccess) {
         if (authSuccess) {
             navController.navigate("Home") {
                 popUpTo("Login") { inclusive = true }
             }
+            val sharedPreferences = context.getSharedPreferences("MyPrefs", MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("isLoggedIn", true)
+            editor.putString("username", state.nombreUsuario)
+            editor.putString("password", state.contrasena)
+            editor.apply()
         }
     }
+
     LaunchedEffect(authError) {
         if (authError) {
-            Toast.makeText( // Mostramos el Toast si el error de autenticación es verdadero
+            Toast.makeText(
                 context,
                 "Usuario o contraseña incorrectos",
                 Toast.LENGTH_SHORT
             ).show()
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -105,6 +113,7 @@ fun LoginView(navController: NavController, viewModel: UsuariosViewModel) {
             )
 
             Text("Iniciar Sesión", fontSize = 26.sp, color = Color(0f, 0.129f, 0.302f, 1f))
+
             Text(
                 "Por favor, inicia sesión para continuar",
                 fontSize = 14.sp,
