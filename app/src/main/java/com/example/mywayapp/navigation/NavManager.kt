@@ -37,7 +37,7 @@ fun NavManager(
         }
 
         composable("Home") {
-            HomeView(navController, viewModelHabitos, usuario)
+            HomeView(navController, viewModelHabitos, viewModelUsuarios, usuario)
         }
 
         composable("Add") {

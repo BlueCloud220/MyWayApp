@@ -34,6 +34,7 @@ import com.example.mywayapp.components.TitleBar
 import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
 import com.example.mywayapp.viewModels.UsuarioHabitosViewModel
+import com.example.mywayapp.viewModels.UsuariosViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -41,7 +42,14 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun HomeView(navController: NavController, viewModel: HabitosViewModel, usuario: Usuarios) {
+fun HomeView(
+    navController: NavController,
+    viewModel: HabitosViewModel,
+    viewModelUsers: UsuariosViewModel,
+    usuario: Usuarios
+) {
+    val state = viewModelUsers.state.collectAsState().value
+
     val usuarioHabitosViewModel =
         remember { UsuarioHabitosViewModel() } // Instanciamos el ViewModel para la relación usuario-hábito
 
@@ -65,7 +73,7 @@ fun HomeView(navController: NavController, viewModel: HabitosViewModel, usuario:
                 containerColor = Color(0f, 0.129f, 0.302f, 1f)
             ),
             actions = {
-                ProfileIconButton(icon = Icons.Filled.AccountCircle) {
+                ProfileIconButton(icon = Icons.Filled.AccountCircle, state = state) {
                     navController.navigate("UpdateProfile/${usuario.uidUsuario}")
                 }
             },

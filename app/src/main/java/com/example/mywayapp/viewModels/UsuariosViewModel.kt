@@ -8,6 +8,7 @@ import com.example.mywayapp.data.repository.UsuariosRepository
 import com.example.mywayapp.model.Usuarios
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class UsuariosViewModel : ViewModel() {
@@ -26,8 +27,6 @@ class UsuariosViewModel : ViewModel() {
         )
     )
     val state: StateFlow<Usuarios> = _state
-
-    val usuarios = repository.usuarios
 
     private val _usuario = MutableLiveData<Usuarios>()
     val usuario: LiveData<Usuarios> get() = _usuario
@@ -61,6 +60,23 @@ class UsuariosViewModel : ViewModel() {
         }
     }
 
+    private val _iconos = MutableStateFlow<List<String>>(emptyList())
+    val iconos: StateFlow<List<String>> = _iconos
+
+
+    fun loadProfileIcons() {
+        viewModelScope.launch {
+            repository.fetchProfileIcons()
+            launch {
+                repository.iconos.collectLatest { iconos ->
+                    if (iconos.isNotEmpty()) {
+                        _iconos.value = iconos
+                    }
+                }
+            }
+        }
+    }
+
     // Guardar usuario
     fun saveUsuario(onComplete: (Boolean, String) -> Unit) {
         val usuario = _state.value
@@ -76,6 +92,13 @@ class UsuariosViewModel : ViewModel() {
     fun updateUsuario(onComplete: (Boolean, String) -> Unit) {
         val usuario = _state.value
         repository.updateUsuario(usuario, onComplete)
+    }
+
+    // Actualizar el token FCM
+    fun updateIconProfile(iconUrl: String, onComplete: (Boolean, String) -> Unit) {
+        _state.value = _state.value.copy(iconoPerfil = iconUrl)
+
+        updateUsuario(onComplete)
     }
 
     // Actualizar el token FCM

@@ -4,24 +4,45 @@ import com.example.mywayapp.model.Usuarios
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 object FirebaseManagerUsuarios {
     private val db = FirebaseFirestore.getInstance()
+    private val storageRef = FirebaseStorage.getInstance()
 
     fun getUserCollection(): CollectionReference = db.collection("usuarios")
+    fun getIconsCollection(): StorageReference = storageRef.reference.child("iconosPerfil")
 }
 
 class UsuariosRepository {
 
     private val collectionRef = FirebaseManagerUsuarios.getUserCollection()
-
-    private val _usuarios = MutableStateFlow<List<Usuarios>>(emptyList())
-    val usuarios: StateFlow<List<Usuarios>> = _usuarios
+    private val collectionIconsRef = FirebaseManagerUsuarios.getIconsCollection()
 
     private val _usuario = MutableStateFlow(Usuarios())
     val usuario: StateFlow<Usuarios> = _usuario
+
+    private val _iconos = MutableStateFlow<List<String>>(emptyList())
+    val iconos: StateFlow<List<String>> = _iconos
+
+    fun fetchProfileIcons() {
+        collectionIconsRef.listAll()
+            .addOnSuccessListener { listResult ->
+                val urls = mutableListOf<String>()
+                listResult.items.forEach { item ->
+                    item.downloadUrl.addOnSuccessListener { uri ->
+                        urls.add(uri.toString())
+                        _iconos.value = urls
+                    }
+                }
+            }
+            .addOnFailureListener {
+                _iconos.value = emptyList()
+            }
+    }
 
     fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
         collectionRef.whereEqualTo("nombreUsuario", nombreUsuario)
@@ -39,10 +60,9 @@ class UsuariosRepository {
         val batch = FirebaseFirestore.getInstance().batch()
 
         val newDocRef =
-            collectionRef.document()  // Aquí se crea un nuevo documento con un ID generado automáticamente
+            collectionRef.document()
         val updatedUsuario = usuario.copy(uidUsuario = newDocRef.id)
 
-        // Asignamos los datos del usuario con el UID actualizado
         batch.set(newDocRef, updatedUsuario)
 
         batch.commit()
