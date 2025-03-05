@@ -1,6 +1,7 @@
 package com.example.mywayapp.views
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -24,10 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.ActionButton
 import com.example.mywayapp.components.ProfileIconButton
 import com.example.mywayapp.components.TitleBar
@@ -35,6 +38,8 @@ import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
 import com.example.mywayapp.viewModels.UsuarioHabitosViewModel
 import com.example.mywayapp.viewModels.UsuariosViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -86,8 +91,8 @@ fun HomeView(
     }) {
         ContentHomeView(
             paddingValues = it,
-            navController = navController,
-            usuarioHabitosViewModel = usuarioHabitosViewModel
+            usuarioHabitosViewModel = usuarioHabitosViewModel,
+            viewModelUsers
         )
     }
 }
@@ -96,34 +101,78 @@ fun HomeView(
 @Composable
 fun ContentHomeView(
     paddingValues: PaddingValues,
-    navController: NavController,
-    usuarioHabitosViewModel: UsuarioHabitosViewModel
+    usuarioHabitosViewModel: UsuarioHabitosViewModel,
+    viewModelUsers: UsuariosViewModel
 ) {
+    val state = viewModelUsers.state.collectAsState().value
+
     val usuarioHabitosList =
         usuarioHabitosViewModel.usuarioHabitosList.collectAsState(initial = emptyList()).value
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
+    // Estado de SwipeRefresh
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = false)
+
+    // Función para refrescar los datos
+    fun onRefresh() {
+        // Aquí puedes llamar a la función para cargar o actualizar los datos
+        usuarioHabitosViewModel.fetchUsuarioHabitos(state.uidUsuario) // Pasar el id adecuado
+    }
+
+    SwipeRefresh(
+        state = swipeRefreshState,
+        onRefresh = { onRefresh() } // Llama a la función onRefresh
     ) {
-        if (usuarioHabitosList.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier.fillParentMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No hay hábitos para mostrar :)",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (usuarioHabitosList.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay hábitos para mostrar :)",
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
                 }
-            }
-        } else {
-            items(usuarioHabitosList) { usuarioHabito ->
-                UsuarioHabitoItem(navController, usuarioHabito)
+            } else {
+                items(usuarioHabitosList) { usuarioHabito ->
+                    UsuarioHabitoItem(viewModelUsers, usuarioHabito)
+
+//                    val state = viewModelUsers.state.collectAsState().value
+//                    val context = LocalContext.current
+//                    val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
+//                    val progreso = sharedPref.getInt(
+//                        "diasTranscurridos",
+//                        -1
+//                    ) // -1 es el valor por defecto si no se encuentra el valor
+//                    println(progreso)
+//                    // Verificar si ya se ha guardado el valor previamente y si el progreso ha cambiado
+//                    if (progreso != -1 && progreso > 0 && state.tokenFCM != null) {
+//                        val fcmHelper = FCMHelper(context)
+//
+//                        // Definir los mensajes según los días transcurridos
+//                        val mensaje = when {
+//                            progreso == 1 -> "¡Ha pasado 1 día! ¡Sigue así, lo estás logrando!"
+//                            progreso in 2..3 -> "¡Llevas $progreso días! ¡Sigue avanzando!"
+//                            progreso in 4..6 -> "¡Estás a punto de cumplir una semana! ¡Sigue con esa actitud!"
+//                            progreso == 7 -> "¡Ya llevas una semana! ¡Tu progreso es increíble!"
+//                            progreso in 8..30 -> "¡Un mes de esfuerzo! ¡Sigue con esa actitud!"
+//                            progreso in 31..180 -> "¡6 meses! Estás cerca de tu meta, no pares."
+//                            progreso in 181..365 -> "¡Un año de esfuerzo! Estás muy cerca de lograrlo."
+//                            else -> "¡Sigue así, gran trabajo! ¡El progreso es el camino!"
+//                        }
+//
+//                        // Enviar la notificación
+//                        fcmHelper.sendNotification(state.tokenFCM, "Avance en tu hábito", mensaje)
+//                    }
+                }
             }
         }
     }

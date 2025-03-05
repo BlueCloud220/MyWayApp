@@ -145,7 +145,6 @@ fun ContentProfileView(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            println("Estos son los iconos recuperados: $iconos")
             items(iconos) { iconUrl ->
                 AsyncImage(
                     model = iconUrl,

@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -64,15 +64,28 @@ fun LoginView(navController: NavController, viewModel: UsuariosViewModel) {
     val scrollState = rememberScrollState()
     var passwordVisible by remember { mutableStateOf(false) }
     val authSuccess by viewModel.authSuccess.collectAsState()
-    val authError by viewModel.authError.collectAsState()
+    val authError by viewModel.authError.collectAsState(initial = false)
+
+    val sharedPreferences = remember { context.getSharedPreferences("MyPrefs", MODE_PRIVATE) }
+    val editor = remember { sharedPreferences.edit() }
+    val isLoggedIn = remember { sharedPreferences.getBoolean("isLoggedIn", false) }
+
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
+            val nombreUsuario = sharedPreferences.getString("username", "") ?: ""
+            val contrasena = sharedPreferences.getString("password", "") ?: ""
+
+            if (nombreUsuario.isNotEmpty() && contrasena.isNotEmpty()) {
+                viewModel.loadUsuarioAuth(nombreUsuario, contrasena)
+            }
+        }
+    }
 
     LaunchedEffect(authSuccess) {
         if (authSuccess) {
             navController.navigate("Home") {
                 popUpTo("Login") { inclusive = true }
             }
-            val sharedPreferences = context.getSharedPreferences("MyPrefs", MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
             editor.putBoolean("isLoggedIn", true)
             editor.putString("username", state.nombreUsuario)
             editor.putString("password", state.contrasena)
@@ -138,8 +151,8 @@ fun LoginView(navController: NavController, viewModel: UsuariosViewModel) {
                 },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = "Email Icon",
+                        imageVector = Icons.Filled.AlternateEmail,
+                        contentDescription = "Username Icon",
                         tint = Color(0f, 0.129f, 0.302f, 1f)
                     )
                 },

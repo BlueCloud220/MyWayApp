@@ -8,6 +8,9 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.resume
 
 object FirebaseManagerUsuarios {
     private val db = FirebaseFirestore.getInstance()
@@ -28,32 +31,44 @@ class UsuariosRepository {
     private val _iconos = MutableStateFlow<List<String>>(emptyList())
     val iconos: StateFlow<List<String>> = _iconos
 
-    fun fetchProfileIcons() {
-        collectionIconsRef.listAll()
-            .addOnSuccessListener { listResult ->
-                val urls = mutableListOf<String>()
-                listResult.items.forEach { item ->
-                    item.downloadUrl.addOnSuccessListener { uri ->
-                        urls.add(uri.toString())
-                        _iconos.value = urls
+    suspend fun fetchProfileIcons(): List<String> {
+        return suspendCancellableCoroutine { continuation ->
+            collectionIconsRef.listAll()
+                .addOnSuccessListener { listResult ->
+                    val urls = mutableListOf<String>()
+                    val tasks = listResult.items.map { item ->
+                        item.downloadUrl.addOnSuccessListener { uri ->
+                            urls.add(uri.toString())
+                            if (urls.size == listResult.items.size) {
+                                continuation.resume(urls)
+                            }
+                        }
                     }
+                    if (tasks.isEmpty()) continuation.resume(emptyList())
                 }
-            }
-            .addOnFailureListener {
-                _iconos.value = emptyList()
-            }
+                .addOnFailureListener {
+                    continuation.resume(emptyList())
+                }
+        }
     }
 
-    fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
-        collectionRef.whereEqualTo("nombreUsuario", nombreUsuario)
-            .whereEqualTo("contrasena", password).get()
-            .addOnSuccessListener { snapshot ->
-                val usuario = snapshot.documents.firstOrNull()?.toObject<Usuarios>()
-                _usuario.value = usuario ?: Usuarios()
-            }
-            .addOnFailureListener {
-                _usuario.value = Usuarios()
-            }
+    suspend fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
+        try {
+            // Llamada a Firebase con Tasks.await() para hacer la llamada asincrónica
+            val snapshot = collectionRef
+                .whereEqualTo("nombreUsuario", nombreUsuario)
+                .whereEqualTo("contrasena", password)
+                .get()
+                .await()  // Esto convierte el callback en un comportamiento asincrónico
+
+            // Procesar los resultados de la consulta
+            val usuario = snapshot.documents.firstOrNull()?.toObject<Usuarios>()
+            _usuario.value = usuario ?: Usuarios()
+        } catch (e: Exception) {
+            // Manejo de errores, por ejemplo, si la conexión a la base de datos falla
+            _usuario.value = Usuarios()
+            println("Error fetching usuario: ${e.message}")
+        }
     }
 
     fun saveUsuario(usuario: Usuarios, onComplete: (Boolean, String) -> Unit) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.Alert
 import com.example.mywayapp.components.DatePickerDocked
 import com.example.mywayapp.components.HabitoDropdown
@@ -176,6 +177,12 @@ fun ContentAddView(
                             habitosViewModel.limpiar()
                             usuarioHabitosViewModel.limpiar()
                             navController.popBackStack()
+                            val fcmHelper = FCMHelper(context)
+                            fcmHelper.sendNotification(
+                                usuario.tokenFCM,
+                                "¡Felicidades!",
+                                "Acabas de comenzar un nuevo seguimiento de hábito."
+                            )
                         } else {
                             // En caso de error, mostramos la alerta personalizada
                             errorAlertMessage.value = message

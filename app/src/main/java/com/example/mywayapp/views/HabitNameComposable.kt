@@ -1,5 +1,7 @@
 package com.example.mywayapp.views
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
@@ -10,18 +12,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.Space
+import com.example.mywayapp.viewModels.UsuariosViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
@@ -49,19 +55,21 @@ fun HabitName(uidHabito: String): String {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UsuarioHabitoItem(
-    navController: NavController,
+    viewModel: UsuariosViewModel,
     usuarioHabito: com.example.mywayapp.model.UsuarioHabitos
 ) {
     val habitName =
         HabitName(usuarioHabito.uidHabito) // Llama al composable que obtiene el nombre real del hábito a partir del uid
-    val (progreso, progresoMaximo) = calcularProgreso(usuarioHabito.fechaInicio) // Calculamos el progreso y el máximo
+    val (progreso, progresoMaximo) = calcularProgreso(
+        usuarioHabito.fechaInicio
+    ) // Calculamos el progreso y el máximo
     val progresoPorcentaje =
         (progreso.toFloat() / progresoMaximo.toFloat()) // Progreso como porcentaje
     val motivacion = when {
         progresoPorcentaje < 0.2 -> "¡Vamos! Empieza el hábito."
         progresoPorcentaje < 0.5 -> "¡Sigues avanzando!"
         progresoPorcentaje < 0.8 -> "¡Casi lo logras!"
-        else -> "¡Gran trabajo! Casi terminas."
+        else -> "¡Excelente, lo has hecho muy bien!"
     }
     val barraColor = when {
         progresoPorcentaje < 0.1 -> Color(1f, 0.329f, 0.439f, 1f)
@@ -71,18 +79,27 @@ fun UsuarioHabitoItem(
     }
     val fechaMeta = calcularFechaMeta(usuarioHabito.fechaInicio, progresoMaximo)
 
-    Card( // Contenedor principal con fondo, bordes redondeados y sombra
+    val context = LocalContext.current
+    val state = viewModel.state.collectAsState().value
+    val tokenFCM = state.tokenFCM
+
+    // Obtener SharedPreferences
+    val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
+
+    // Guardar el valor actual de diasTranscurridos para futuras comparaciones
+    val editor: SharedPreferences.Editor = sharedPref.edit()
+    editor.putInt("diasTranscurridos", progreso)
+    editor.apply() // Guarda el valor de forma asíncrona
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .shadow(
-                4.dp,
-                shape = MaterialTheme.shapes.medium
-            ), // Usamos `shadow()` en lugar de `CardDefaults.elevation`
-        shape = MaterialTheme.shapes.medium
+            .shadow(4.dp, shape = MaterialTheme.shapes.medium),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Titulo del hábito
             Text(
                 text = "Hábito: $habitName",
                 modifier = Modifier.fillMaxWidth(),
@@ -90,7 +107,7 @@ fun UsuarioHabitoItem(
             )
             Space(8.dp)
 
-            Text( // Fecha de inicio
+            Text(
                 text = "Fecha de inicio: ${usuarioHabito.fechaInicio}",
                 modifier = Modifier.fillMaxWidth()
             )
@@ -98,13 +115,14 @@ fun UsuarioHabitoItem(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween // Alineación entre los textos
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = "Meta para alcanzar: $fechaMeta",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
+                Text(text = " | ", style = MaterialTheme.typography.bodySmall, color = Color.Red)
                 Text(
                     text = motivacion,
                     style = MaterialTheme.typography.bodySmall,
@@ -114,18 +132,17 @@ fun UsuarioHabitoItem(
             Space(12.dp)
 
             LinearProgressIndicator(
-                // Barra de progreso
                 progress = progresoPorcentaje,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
                 color = barraColor,
-                trackColor = Color.Gray.copy(alpha = 0.3f),
+                trackColor = Color.Gray.copy(alpha = 0.3f)
             )
             Space(8.dp)
 
-            Text( // Texto de progreso (racha)
+            Text(
                 text = "Racha: $progreso de $progresoMaximo días",
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.Black
@@ -134,6 +151,8 @@ fun UsuarioHabitoItem(
     }
 }
 
+
+@Composable
 @RequiresApi(Build.VERSION_CODES.O)
 fun calcularProgreso(fechaInicio: String): Pair<Int, Int> {
     return try {
@@ -173,4 +192,3 @@ fun calcularFechaMeta(fechaInicio: String, progresoMaximo: Int): String {
         "Error"
     }
 }
-

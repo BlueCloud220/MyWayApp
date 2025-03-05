@@ -25,7 +25,6 @@ class MainActivity : ComponentActivity() {
         val viewModelUsuarios: UsuariosViewModel by viewModels()
 
         viewModelUsuarios.usuario.observe(this) { usuario ->
-            println("Este es el usuario recuperado: $usuario")
             setContent {
                 MyWayAppTheme {
                     NavManager(viewModelHabitos, viewModelUsuarios, usuario)
@@ -68,7 +67,6 @@ class MainActivity : ComponentActivity() {
                 return@addOnCompleteListener
             }
             val token = task.result
-            println("FCM Token: $token")
 
             viewModelUsuarios.updateTokenFCM(token) { success, message ->
                 if (success) {

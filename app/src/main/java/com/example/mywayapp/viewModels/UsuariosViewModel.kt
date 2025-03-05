@@ -8,7 +8,7 @@ import com.example.mywayapp.data.repository.UsuariosRepository
 import com.example.mywayapp.model.Usuarios
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class UsuariosViewModel : ViewModel() {
@@ -61,18 +61,18 @@ class UsuariosViewModel : ViewModel() {
     }
 
     private val _iconos = MutableStateFlow<List<String>>(emptyList())
-    val iconos: StateFlow<List<String>> = _iconos
+    val iconos: StateFlow<List<String>> = _iconos.asStateFlow()
+
+    private var lastFetchedIcons: List<String> = emptyList()
 
 
     fun loadProfileIcons() {
+
         viewModelScope.launch {
-            repository.fetchProfileIcons()
-            launch {
-                repository.iconos.collectLatest { iconos ->
-                    if (iconos.isNotEmpty()) {
-                        _iconos.value = iconos
-                    }
-                }
+            val nuevosIconos = repository.fetchProfileIcons()
+            if (nuevosIconos != lastFetchedIcons) {
+                _iconos.value = nuevosIconos
+                lastFetchedIcons = nuevosIconos
             }
         }
     }

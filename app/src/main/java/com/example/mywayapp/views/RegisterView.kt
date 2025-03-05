@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -174,8 +175,8 @@ fun RegisterView(navController: NavController, viewModel: UsuariosViewModel) {
                 },
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.Email,
-                        contentDescription = "Email Icon",
+                        imageVector = Icons.Filled.AlternateEmail,
+                        contentDescription = "Username Icon",
                         tint = Color(0f, 0.129f, 0.302f, 1f)
                     )
                 },
