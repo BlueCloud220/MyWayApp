@@ -67,7 +67,8 @@ fun HomeView(
         ContentHomeView(
             paddingValues = it,
             viewModelHabits,
-            viewModelUsers
+            viewModelUsers,
+            navController
         )
     }
 }
@@ -77,7 +78,8 @@ fun HomeView(
 fun ContentHomeView(
     paddingValues: PaddingValues,
     viewModelHabits: HabitosViewModel,
-    viewModelUsers: UsuariosViewModel
+    viewModelUsers: UsuariosViewModel,
+    navController: NavController
 ) {
     val habitosList by viewModelHabits.habitosUsuario.collectAsState()
 
@@ -102,37 +104,8 @@ fun ContentHomeView(
             }
         } else {
             items(habitosList) { usuarioHabito ->
-                UsuarioHabitoItem(viewModelUsers, usuarioHabito)
-
-//                    val state = viewModelUsers.state.collectAsState().value
-//                    val context = LocalContext.current
-//                    val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
-//                    val progreso = sharedPref.getInt(
-//                        "diasTranscurridos",
-//                        -1
-//                    ) // -1 es el valor por defecto si no se encuentra el valor
-//                    println(progreso)
-//                    // Verificar si ya se ha guardado el valor previamente y si el progreso ha cambiado
-//                    if (progreso != -1 && progreso > 0 && state.tokenFCM != null) {
-//                        val fcmHelper = FCMHelper(context)
-//
-//                        // Definir los mensajes según los días transcurridos
-//                        val mensaje = when {
-//                            progreso == 1 -> "¡Ha pasado 1 día! ¡Sigue así, lo estás logrando!"
-//                            progreso in 2..3 -> "¡Llevas $progreso días! ¡Sigue avanzando!"
-//                            progreso in 4..6 -> "¡Estás a punto de cumplir una semana! ¡Sigue con esa actitud!"
-//                            progreso == 7 -> "¡Ya llevas una semana! ¡Tu progreso es increíble!"
-//                            progreso in 8..30 -> "¡Un mes de esfuerzo! ¡Sigue con esa actitud!"
-//                            progreso in 31..180 -> "¡6 meses! Estás cerca de tu meta, no pares."
-//                            progreso in 181..365 -> "¡Un año de esfuerzo! Estás muy cerca de lograrlo."
-//                            else -> "¡Sigue así, gran trabajo! ¡El progreso es el camino!"
-//                        }
-//
-//                        // Enviar la notificación
-//                        fcmHelper.sendNotification(state.tokenFCM, "Avance en tu hábito", mensaje)
-//                    }
+                UsuarioHabitoItem(viewModelUsers, usuarioHabito, navController)
             }
         }
     }
 }
-

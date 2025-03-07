@@ -51,7 +51,7 @@ fun NavManager(
             arguments = listOf(navArgument("uidHabito") { type = NavType.StringType })
         ) { backStackEntry ->
             val uidHabito = backStackEntry.arguments?.getString("uidHabito") ?: ""
-            UpdateView(navController, uidHabito, viewModelHabitos)
+            UpdateView(navController, uidHabito, usuario, viewModelHabitos, viewModelRecaidas)
         }
 
         composable(

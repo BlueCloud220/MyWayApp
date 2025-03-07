@@ -25,6 +25,20 @@ class HabitosViewModel : ViewModel() {
         }
     }
 
+    val habitos = repository.habitos
+    private fun fetchHabits() {
+        viewModelScope.launch {
+            repository.fetchHabits()
+        }
+    }
+
+    val habitosUsuario = repository.habitosUsuario
+    private fun fetchHabitsUser(uidUsuario: String) {
+        viewModelScope.launch {
+            repository.fetchHabitsUser(uidUsuario)
+        }
+    }
+
     private val _state = MutableStateFlow(
         Habitos(
             uidHabito = "",
@@ -49,24 +63,9 @@ class HabitosViewModel : ViewModel() {
         )
     }
 
-    val habitos = repository.habitos
-    val habitosUsuario = repository.habitosUsuario
-
-    private fun fetchHabits() {
+    fun loadHabit(uidUsuario: String, uidHabito: String) {
         viewModelScope.launch {
-            repository.fetchHabits()
-        }
-    }
-
-    private fun fetchHabitsUser(uidUsuario: String) {
-        viewModelScope.launch {
-            repository.fetchHabitsUser(uidUsuario)
-        }
-    }
-
-    fun loadHabit(uidHabito: String) {
-        viewModelScope.launch {
-            repository.fetchHabitById(uidHabito)
+            repository.fetchHabitById(uidUsuario, uidHabito)
             repository.habito.collect { habito ->
                 _state.value = habito
             }

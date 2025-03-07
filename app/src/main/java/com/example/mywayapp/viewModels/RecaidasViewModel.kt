@@ -1,11 +1,14 @@
 package com.example.mywayapp.viewModels
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mywayapp.data.repository.RecaidasRepository
 import com.example.mywayapp.model.Recaidas
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RecaidasViewModel : ViewModel() {
@@ -21,24 +24,29 @@ class RecaidasViewModel : ViewModel() {
     )
     val state: StateFlow<Recaidas> = _state
 
-//    val recaidas = repository.recaidas
-//
-//    init {
-//        if (state.value.fechaRecaida.isEmpty()) {
-//            onValueChange("fechaRecaida", getTodayDate())
-//        }
-//        if (recaidas.value.isEmpty()) {
-//            fetchRecaidas()
-//        }
-//    }
+    private val _uidUsuario = mutableStateOf("")
+    val uidUsuario: State<String> = _uidUsuario
 
-    private fun fetchRecaidas() {
-        viewModelScope.launch {
-            repository.fetchRecaidas()
+    private val _uidHabito = mutableStateOf("")
+    val uidHabito: State<String> = _uidHabito
+
+    fun onUsuarioHabitoCargado(uidUsuario: String, uidHabito: String) {
+        _uidUsuario.value = uidUsuario
+        _uidHabito.value = uidHabito
+        if (uidUsuario.isNotEmpty() && uidHabito.isNotEmpty()) {
+            fetchRelapsesUser(uidUsuario, uidHabito)
         }
     }
 
-    fun loadRecaida(uidRecaida: String) {
+    val recaidas = repository.recaidas
+
+    fun fetchRelapsesUser(uidUsuario: String, uidHabito: String) {
+        viewModelScope.launch {
+            repository.fetchRelapsesUser(uidUsuario, uidHabito)
+        }
+    }
+
+    fun loadRelapse(uidRecaida: String) {
         viewModelScope.launch {
             repository.fetchRecaidaById(uidRecaida)
             repository.recaida.collect { recaida ->
@@ -48,9 +56,9 @@ class RecaidasViewModel : ViewModel() {
     }
 
     // Guardar recaida
-    fun saveRecaida(onComplete: (Boolean, String) -> Unit) {
+    fun saveRecaida(uidUsuario: String, uidHabito: String, onComplete: (Boolean, String) -> Unit) {
         val recaida = _state.value
-        repository.saveRecaida(recaida, onComplete)
+        repository.saveRecaida(recaida, uidUsuario, uidHabito, onComplete)
     }
 
     fun onValueChange(field: String, value: String) {

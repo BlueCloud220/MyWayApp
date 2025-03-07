@@ -19,18 +19,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.mywayapp.components.Space
 import com.example.mywayapp.model.Habitos
 import com.example.mywayapp.viewModels.UsuariosViewModel
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -39,7 +37,8 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun UsuarioHabitoItem(
     viewModel: UsuariosViewModel,
-    usuarioHabito: Habitos
+    usuarioHabito: Habitos,
+    navController: NavController
 ) {
     val habitName =
         usuarioHabito.nombre // Llama al composable que obtiene el nombre real del hábito a partir del uid
@@ -78,7 +77,10 @@ fun UsuarioHabitoItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(12.dp)
-            .shadow(4.dp, shape = MaterialTheme.shapes.medium),
+            .shadow(4.dp, shape = MaterialTheme.shapes.medium)
+            .clickable { // Hace que toda la card sea interactiva
+                navController.navigate("Update/${usuarioHabito.uidHabito}")
+            },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {

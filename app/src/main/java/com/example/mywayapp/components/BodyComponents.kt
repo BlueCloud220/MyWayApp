@@ -2,13 +2,21 @@ package com.example.mywayapp.components
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -17,6 +25,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -24,18 +34,23 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -46,10 +61,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mywayapp.model.Habitos
+import com.example.mywayapp.model.Recaidas
 import com.example.mywayapp.ui.theme.Purple80
+import com.example.mywayapp.viewModels.RecaidasViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -147,8 +167,66 @@ fun Alert(
                 Text(text = confirmText)
             }
         },
-        title = { Text(text = title) },
+        title = { Text(text = title, color = Color.Red, fontWeight = FontWeight.Bold) },
         text = { Text(text = message) },
+        containerColor = Color.White
+    )
+}
+
+@Composable
+fun AlertOutlinedTextField(
+    title: String,
+    viewModelRelapses: RecaidasViewModel,
+    confirmText: String,
+    dismissText: String? = null,
+    onConfirmClick: () -> Unit,
+    onDismissClick: (() -> Unit)? = null
+) {
+    val state = viewModelRelapses.state.collectAsState().value
+
+    AlertDialog(
+        onDismissRequest = { onDismissClick?.invoke() ?: onConfirmClick() },
+        confirmButton = {
+            dismissText?.let {
+                Button(
+                    onClick = { onDismissClick?.invoke() },
+                    colors = ButtonColors(
+                        Color(1f, 0.329f, 0.439f, 1f),
+                        Color(0.984f, 0.988f, 0.988f, 1f),
+                        Purple80,
+                        Color(0.984f, 0.988f, 0.988f, 1f)
+                    )
+                ) {
+                    Text(text = it)
+                }
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { onConfirmClick() },
+                colors = ButtonColors(
+                    Color(0.129f, 0.302f, 0.986f, 1f),
+                    Color(0.984f, 0.988f, 0.988f, 1f),
+                    Purple80,
+                    Color(0.984f, 0.988f, 0.988f, 1f)
+                )
+            ) {
+                Text(text = confirmText)
+            }
+        },
+        title = { Text(text = title, color = Color.Red, fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.motivo,
+                    onValueChange = { viewModelRelapses.onValueChange("motivo", it) },
+                    label = { Text("Motivo de su recaída:") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
         containerColor = Color.White
     )
 }
@@ -303,4 +381,161 @@ fun ReadOnlyTextField(
         readOnly = true,
         textStyle = TextStyle(color = Color.Gray)
     )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarWithHabitTracking(
+    startHabit: String,
+    completedDays: List<LocalDate>,
+    relapseDays: List<LocalDate>,
+    onRelapseRecorded: (LocalDate) -> Unit
+) {
+    val currentMonth = YearMonth.now()
+
+    val startDate = if (startHabit.isNullOrBlank()) {
+        LocalDate.now()
+    } else {
+        try {
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            LocalDate.parse(startHabit, formatter)
+        } catch (e: DateTimeParseException) {
+            LocalDate.now()
+        }
+    }
+
+    // Formateador para obtener el mes en español
+    val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "ES"))
+    val formattedMonth = currentMonth.format(monthFormatter).toUpperCase()
+
+    // Determinar el primer y último día del mes
+    val firstDayOfMonth = currentMonth.atDay(1)
+    val lastDayOfMonth = currentMonth.atEndOfMonth()
+
+    // Obtener el día de la semana en que empieza el mes (lunes = 1, domingo = 7)
+    val startDayOfWeek =
+        firstDayOfMonth.dayOfWeek.value % 7  // Modificar para que domingo sea 6, lunes 0, etc.
+
+    // Calcular los días necesarios del mes anterior y posterior
+    val previousMonthDays =
+        (startDayOfWeek + 6) % 7  // Días del mes anterior para llenar hasta el inicio del mes
+    val nextMonthDays =
+        (42 - (previousMonthDays + lastDayOfMonth.dayOfMonth)) % 7  // Días del mes siguiente para completar 42
+
+    // Crear una lista con todos los días de la cuadrícula, incluyendo los días del mes anterior y posterior
+    val totalDays = mutableListOf<LocalDate>()
+
+    // Agregar días del mes anterior
+    val previousMonth = currentMonth.minusMonths(1)
+    for (i in 1..previousMonthDays) {
+        totalDays.add(previousMonth.atEndOfMonth().minusDays(i.toLong()))
+    }
+
+    // Agregar días del mes actual
+    for (i in 1..lastDayOfMonth.dayOfMonth) {
+        totalDays.add(currentMonth.atDay(i))
+    }
+
+    // Agregar días del mes siguiente
+    val nextMonth = currentMonth.plusMonths(1)
+    for (i in 1..nextMonthDays) {
+        totalDays.add(nextMonth.atDay(i))
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(1.dp)
+            .shadow(4.dp, shape = MaterialTheme.shapes.medium),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Título del mes actual
+            Text(
+                text = formattedMonth,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Días de la semana
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(start = 13.dp, bottom = 8.dp)
+            ) {
+                val dayNames = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+                dayNames.forEach { dayName ->
+                    Text(
+                        text = dayName.toUpperCase(),
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.weight(0.8f),
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            // Calendario de días del mes
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 600.dp)
+                    .padding(2.dp)
+            ) {
+                items(totalDays.size) { index ->
+                    val date = totalDays[index]
+                    val isStartHabit = date == startDate
+                    val isCompleted = completedDays.contains(date)
+                    val isRelapse = relapseDays.contains(date)
+
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when {
+                                    isStartHabit -> Color(0f, 0.129f, 0.302f, 1f)
+                                    isRelapse -> Color(0xFFF44336) // Rojo
+                                    isCompleted -> Color(0xFF4CAF50) // Verde
+                                    else -> Color.LightGray
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = date.dayOfMonth.toString(),
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RelapseButton(name: String, backColor: Color, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = backColor),
+        shape = CircleShape,
+        modifier = Modifier
+            .size(200.dp)
+            .shadow(8.dp, shape = CircleShape)
+    ) {
+        Text(
+            text = name,
+            color = Color.White,
+            style = TextStyle(
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+        )
+    }
 }

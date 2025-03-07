@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +90,8 @@ fun ContentAddView(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
+    val alertMessage = rememberSaveable { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         if (state.fechaInicio.isEmpty()) {
             val today = getTodayDate()
@@ -147,11 +150,13 @@ fun ContentAddView(
                             viewModel.limpiar()
                             navController.popBackStack()
                         } else {
-                            Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+                            alertMessage.value = message
+                            viewModel.cambiaAlert()
                         }
                     }
                 } else {
                     focusManager.moveFocus(FocusDirection.Down)
+                    alertMessage.value = "Todos los campos deben ser llenados."
                     viewModel.cambiaAlert()
                 }
             }
@@ -167,7 +172,7 @@ fun ContentAddView(
     }
     if (state.showAlert) {
         Alert(title = "¡Atención!",
-            message = "Todos los campos deben ser llenados.",
+            message = alertMessage.value,
             confirmText = "Aceptar",
             onConfirmClick = {
                 viewModel.cancelAlert()

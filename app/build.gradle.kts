@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.volley)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.compose)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

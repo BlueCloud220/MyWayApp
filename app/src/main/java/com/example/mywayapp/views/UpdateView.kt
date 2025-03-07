@@ -1,11 +1,11 @@
 package com.example.mywayapp.views
 
-import android.annotation.SuppressLint
+import android.os.Build
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -19,34 +19,38 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.mywayapp.components.Alert
-import com.example.mywayapp.components.DatePickerDocked
-import com.example.mywayapp.components.MainButton
+import com.example.mywayapp.components.AlertOutlinedTextField
+import com.example.mywayapp.components.CalendarWithHabitTracking
 import com.example.mywayapp.components.MainIconButton
-import com.example.mywayapp.components.MainTextField
+import com.example.mywayapp.components.RelapseButton
 import com.example.mywayapp.components.Space
-import com.example.mywayapp.components.SpaceW
 import com.example.mywayapp.components.TitleBar
+import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
+import com.example.mywayapp.viewModels.RecaidasViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun UpdateView(navController: NavController, uidHabito: String, viewModel: HabitosViewModel) {
+fun UpdateView(
+    navController: NavController,
+    uidHabito: String,
+    usuario: Usuarios,
+    viewModelHabits: HabitosViewModel,
+    viewModelRelapses: RecaidasViewModel
+) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(title = { TitleBar(name = "Editar Hábito") },
+            CenterAlignedTopAppBar(title = { TitleBar(name = "Seguimiento Hábito") },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0f, 0.129f, 0.302f, 1f)
                 ),
@@ -57,105 +61,131 @@ fun UpdateView(navController: NavController, uidHabito: String, viewModel: Habit
                 })
         },
     ) {
-        ContentUpdateView(paddingValues = it, navController, uidHabito, viewModel)
+        ContentUpdateView(
+            paddingValues = it,
+            uidHabito,
+            usuario,
+            viewModelHabits,
+            viewModelRelapses
+        )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ContentUpdateView(
     paddingValues: PaddingValues,
-    navController: NavController,
     uidHabito: String,
-    viewModel: HabitosViewModel
+    usuario: Usuarios,
+    viewModelHabits: HabitosViewModel,
+    viewModelRelapses: RecaidasViewModel
 ) {
-    LaunchedEffect(uidHabito) {
-        viewModel.loadHabit(uidHabito)
+    val stateRelapses = viewModelRelapses.state.collectAsState().value
+
+    LaunchedEffect(usuario.uidUsuario, uidHabito) {
+        if (stateRelapses.fechaRecaida.isEmpty()) {
+            val today = getTodayDate()
+            viewModelRelapses.onValueChange("fechaRecaida", today)
+        }
+
+        viewModelHabits.loadHabit(usuario.uidUsuario, uidHabito)
+        viewModelRelapses.onUsuarioHabitoCargado(usuario.uidUsuario, uidHabito)
     }
 
-    val state = viewModel.state.collectAsState().value
-    val nombreFocusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
+    val state = viewModelHabits.state.collectAsState().value
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
+    val recaidasList by viewModelRelapses.recaidas.collectAsState()
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+
+    // Convertir la fecha de inicio a LocalDate
+    val startDate = if (state.fechaInicio.isNullOrBlank()) {
+        LocalDate.now()
+    } else {
+        try {
+            LocalDate.parse(state.fechaInicio, formatter)
+        } catch (e: DateTimeParseException) {
+            LocalDate.now()
+        }
+    }
+
+    // Generar la lista de fechas cumplidas
+    val completedDays = (0 until state.rachaDias + 1).map { days ->
+        startDate.plusDays(days.toLong()).format(formatter)
+    }
+
+    // Convertir las fechas cumplidas a LocalDate para pasarlas a completedDays
+    val completedDaysLocalDate = completedDays.mapNotNull { dateStr ->
+        runCatching { LocalDate.parse(dateStr, formatter) }.getOrNull()
+    }
+    println("completedDaysLocalDate: $completedDaysLocalDate")
 
     Column(
         modifier = Modifier
-            .padding(paddingValues)
-            .padding(10.dp)
             .fillMaxSize()
-            .verticalScroll(scrollState), horizontalAlignment = Alignment.CenterHorizontally
+            .padding(paddingValues)
     ) {
-        MainTextField(
-            value = state.nombre,
-            onValue = { viewModel.onValueChange("nombre", it) },
-            label = "Nombre:",
-            keyboardType = KeyboardType.Text,
-            focusRequester = nombreFocusRequester,
-            maxLength = 100
-        )
-
-        Space(10.dp)
-
-        MainTextField(
-            value = state.descripcion,
-            onValue = { viewModel.onValueChange("descripcion", it) },
-            label = "Descripción:",
-            keyboardType = KeyboardType.Text,
-            focusRequester = remember { FocusRequester() },
-            maxLength = 300
-        )
-
-        Space(10.dp)
-
-        DatePickerDocked(
-            value = state.fechaInicio,
-            label = "Fecha de inicio:",
-            onValue = { viewModel.onValueChange("fechaInicio", it) },
-        )
-
-        Space(20.dp)
-
-        Row(
-            modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
-            MainButton(
-                name = "Editar",
-                backColor = Color(0.129f, 0.302f, 0.986f, 1f),
-                color = Color(0.984f, 0.988f, 0.988f, 1f)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-//                if (state.nombre != "" && state.descripcion != "" && state.fechaInicio != "") {
-//                    viewModel.updateHabito { success, message ->
-//                        if (success) {
-//                            Toast.makeText(
-//                                context, message, Toast.LENGTH_SHORT
-//                            ).show()
-//                            viewModel.limpiar()
-//                            navController.popBackStack()
-//                        } else {
-//                            Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
-//                } else {
-//                    focusManager.moveFocus(FocusDirection.Down)
-//                    viewModel.cambiaAlert()
-//                }
-            }
-            SpaceW()
-            MainButton(
-                name = "Cancelar",
-                backColor = Color(1f, 0.329f, 0.439f, 1f),
-                color = Color.White
-            ) {
-                navController.popBackStack()
+                CalendarWithHabitTracking(
+                    state.fechaInicio,
+                    completedDays = completedDaysLocalDate,
+                    relapseDays = recaidasList.mapNotNull { recaida ->
+                        runCatching { LocalDate.parse(recaida.fechaRecaida, formatter) }.getOrNull()
+                    },
+                    onRelapseRecorded = {}
+                )
+
+                Space(50.dp)
+
+                RelapseButton("He recaído", Color.Red) {
+                    viewModelRelapses.cambiaAlert()
+                }
             }
         }
-    }
-    if (state.showAlert) {
-        Alert(title = "¡Atención!",
-            message = "Todos los campos deben ser llenados.",
-            confirmText = "Aceptar",
-            onConfirmClick = {
-                viewModel.cancelAlert()
-            }) { }
+
+        if (stateRelapses.showAlert) {
+            AlertOutlinedTextField(
+                title = "¡Atención!",
+                viewModelRelapses = viewModelRelapses,
+                confirmText = "Aceptar",
+                onConfirmClick = {
+                    if (stateRelapses.fechaRecaida != "" && stateRelapses.motivo != "") {
+                        viewModelRelapses.saveRecaida(
+                            usuario.uidUsuario,
+                            uidHabito
+                        ) { success, message ->
+                            if (success) {
+                                viewModelRelapses.cancelAlert()
+                                viewModelRelapses.limpiar()
+                                Toast.makeText(
+                                    context, message, Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                Toast.makeText(
+                                    context, message, Toast.LENGTH_SHORT
+                                ).show()
+                                viewModelRelapses.cancelAlert()
+                                viewModelRelapses.onValueChange("motivo", "")
+                            }
+                        }
+                    } else {
+                        Toast.makeText(
+                            context, "Debes especificar el motivo de tu recaída para poder continuar", Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            ) {}
+        }
     }
 }
