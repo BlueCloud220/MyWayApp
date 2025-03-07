@@ -37,6 +37,7 @@ class UsuariosViewModel : ViewModel() {
                 _usuario.postValue(usuario)
             }
         }
+        loadProfileIcons()
     }
 
     private val _authSuccess = MutableStateFlow(false)
@@ -65,9 +66,7 @@ class UsuariosViewModel : ViewModel() {
 
     private var lastFetchedIcons: List<String> = emptyList()
 
-
     fun loadProfileIcons() {
-
         viewModelScope.launch {
             val nuevosIconos = repository.fetchProfileIcons()
             if (nuevosIconos != lastFetchedIcons) {

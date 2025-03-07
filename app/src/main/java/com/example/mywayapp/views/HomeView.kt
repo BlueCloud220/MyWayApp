@@ -1,7 +1,6 @@
 package com.example.mywayapp.views
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
@@ -18,30 +17,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.ActionButton
 import com.example.mywayapp.components.ProfileIconButton
 import com.example.mywayapp.components.TitleBar
 import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
-import com.example.mywayapp.viewModels.UsuarioHabitosViewModel
 import com.example.mywayapp.viewModels.UsuariosViewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,27 +39,12 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun HomeView(
     navController: NavController,
-    viewModel: HabitosViewModel,
+    viewModelHabits: HabitosViewModel,
     viewModelUsers: UsuariosViewModel,
     usuario: Usuarios
 ) {
     val state = viewModelUsers.state.collectAsState().value
-
-    val usuarioHabitosViewModel =
-        remember { UsuarioHabitosViewModel() } // Instanciamos el ViewModel para la relación usuario-hábito
-
-    LaunchedEffect(usuario.uidUsuario) { // Cuando se inicie la pantalla, obtenemos la lista de hábitos del usuario
-        usuarioHabitosViewModel.fetchUsuarioHabitos(usuario.uidUsuario)
-    }
-
-    val usuarioHabitosList by usuarioHabitosViewModel.usuarioHabitosList.collectAsState() // Convertimos las fechas de inicio a LocalDate.
-    val markedDates = usuarioHabitosList.mapNotNull { habit ->
-        try { // Suponiendo que habit.fechaInicio está en "dd/MM/yyyy"
-            LocalDate.parse(habit.fechaInicio, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        } catch (e: Exception) {
-            null
-        }
-    }
+    viewModelHabits.onUsuarioCargado(usuario.uidUsuario)
 
     Scaffold(topBar = {
         CenterAlignedTopAppBar(
@@ -85,13 +60,13 @@ fun HomeView(
         )
     }, floatingActionButton = {
         ActionButton(onClick = {
-            viewModel.limpiar()
+            viewModelHabits.limpiar()
             navController.navigate("Add")
         })
     }) {
         ContentHomeView(
             paddingValues = it,
-            usuarioHabitosViewModel = usuarioHabitosViewModel,
+            viewModelHabits,
             viewModelUsers
         )
     }
@@ -101,49 +76,33 @@ fun HomeView(
 @Composable
 fun ContentHomeView(
     paddingValues: PaddingValues,
-    usuarioHabitosViewModel: UsuarioHabitosViewModel,
+    viewModelHabits: HabitosViewModel,
     viewModelUsers: UsuariosViewModel
 ) {
-    val state = viewModelUsers.state.collectAsState().value
+    val habitosList by viewModelHabits.habitosUsuario.collectAsState()
 
-    val usuarioHabitosList =
-        usuarioHabitosViewModel.usuarioHabitosList.collectAsState(initial = emptyList()).value
-
-    // Estado de SwipeRefresh
-    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = false)
-
-    // Función para refrescar los datos
-    fun onRefresh() {
-        // Aquí puedes llamar a la función para cargar o actualizar los datos
-        usuarioHabitosViewModel.fetchUsuarioHabitos(state.uidUsuario) // Pasar el id adecuado
-    }
-
-    SwipeRefresh(
-        state = swipeRefreshState,
-        onRefresh = { onRefresh() } // Llama a la función onRefresh
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            if (usuarioHabitosList.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier.fillParentMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No hay hábitos para mostrar :)",
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                    }
+        if (habitosList.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier.fillParentMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hay hábitos para mostrar :)",
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
                 }
-            } else {
-                items(usuarioHabitosList) { usuarioHabito ->
-                    UsuarioHabitoItem(viewModelUsers, usuarioHabito)
+            }
+        } else {
+            items(habitosList) { usuarioHabito ->
+                UsuarioHabitoItem(viewModelUsers, usuarioHabito)
 
 //                    val state = viewModelUsers.state.collectAsState().value
 //                    val context = LocalContext.current
@@ -172,7 +131,6 @@ fun ContentHomeView(
 //                        // Enviar la notificación
 //                        fcmHelper.sendNotification(state.tokenFCM, "Avance en tu hábito", mensaje)
 //                    }
-                }
             }
         }
     }

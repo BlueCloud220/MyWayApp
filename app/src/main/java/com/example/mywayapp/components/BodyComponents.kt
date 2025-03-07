@@ -1,5 +1,7 @@
 package com.example.mywayapp.components
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,10 +45,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mywayapp.model.Habitos
 import com.example.mywayapp.ui.theme.Purple80
-import com.example.mywayapp.viewModels.HabitosViewModel
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -151,6 +153,7 @@ fun Alert(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DatePickerDocked(value: String, onValue: (String) -> Unit, label: String) {
     var showModal by remember { mutableStateOf(false) }
@@ -192,19 +195,22 @@ fun formatDate(millis: Long): String {
     }.format(Date(millis))
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerModal(
     onDateSelected: (Long?) -> Unit, onDismiss: () -> Unit
 ) {
-    val calendar = Calendar.getInstance()
-    val startOfYearMillis: Long = calendar.timeInMillis
+    val startOfDayMillis = LocalDate.now()
+        .atStartOfDay(ZoneOffset.UTC)
+        .toInstant()
+        .toEpochMilli()
 
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = startOfYearMillis,
+        initialSelectedDateMillis = startOfDayMillis,
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis <= startOfYearMillis
+                return utcTimeMillis >= startOfDayMillis
             }
         })
 
@@ -224,14 +230,14 @@ fun DatePickerModal(
     }
 }
 
+
 @Composable
 fun HabitoDropdown(
-    viewModel: HabitosViewModel,
-    onHabitoSelected: (nombre: String, descripcion: String, uidHabito: String) -> Unit
+    habitosList: List<Habitos>,
+    onHabitoSelected: (uidHabito: String, nombre: String, descripcion: String) -> Unit
 ) {
-    val habitosList = viewModel.habitos.collectAsState(initial = emptyList())
     var expanded by remember { mutableStateOf(false) }
-    var selectedHabito by rememberSaveable { mutableStateOf("") } // Ahora se guarda la selección
+    var selectedHabito by rememberSaveable { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxWidth()
@@ -239,7 +245,13 @@ fun HabitoDropdown(
         OutlinedTextField(
             value = selectedHabito,
             onValueChange = {},
-            label = { Text("Seleccionar Hábito") },
+            label = {
+                Row {
+                    Text(text = "*", color = Color.Red)
+                    Spacer(Modifier.width(2.dp))
+                    Text(text = "Seleccionar Hábito")
+                }
+            },
             readOnly = true,
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
@@ -247,22 +259,22 @@ fun HabitoDropdown(
                 }
             },
             modifier = Modifier
-                .fillMaxWidth() // Asegura que ocupe todo el ancho disponible
+                .fillMaxWidth()
                 .padding(horizontal = 15.dp)
         )
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth() // Asegura que el DropdownMenu tenga el mismo ancho
+            modifier = Modifier.fillMaxWidth()
         ) {
-            habitosList.value.forEach { habito ->
+            habitosList.forEach { habito ->
                 DropdownMenuItem(
                     text = { Text(habito.nombre) },
                     onClick = {
                         selectedHabito = habito.nombre
                         expanded = false
-                        onHabitoSelected(habito.nombre, habito.descripcion, habito.uidHabito)
+                        onHabitoSelected(habito.uidHabito, habito.nombre, habito.descripcion)
                     }
                 )
             }
@@ -277,14 +289,18 @@ fun ReadOnlyTextField(
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = {}, // No permite cambios
+        onValueChange = {},
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 15.dp)
-            .height(120.dp), // Más alto para evitar scroll interno
-        label = { Text(label) },
-        readOnly = true, // Bloquea la edición
-        maxLines = 5, // Permite ver más texto sin cortar
-        textStyle = TextStyle(color = Color.Gray) // Diferenciar del resto
+            .padding(horizontal = 15.dp),
+        label = {
+            Row {
+                Text(text = "*", color = Color.Red)
+                Spacer(Modifier.width(2.dp))
+                Text(label)
+            }
+        },
+        readOnly = true,
+        textStyle = TextStyle(color = Color.Gray)
     )
 }

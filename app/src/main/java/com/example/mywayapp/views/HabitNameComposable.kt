@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,8 +26,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.Space
+import com.example.mywayapp.model.Habitos
 import com.example.mywayapp.viewModels.UsuariosViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -34,32 +35,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-
-@Composable
-fun HabitName(uidHabito: String): String {
-    val habitNameState = produceState(initialValue = "") {
-        try {
-            val document = FirebaseFirestore.getInstance()
-                .collection("habitos")
-                .document(uidHabito)
-                .get()
-                .await()
-            value = document.getString("nombre") ?: ""
-        } catch (e: Exception) {
-            value = "Error"
-        }
-    }
-    return habitNameState.value
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UsuarioHabitoItem(
     viewModel: UsuariosViewModel,
-    usuarioHabito: com.example.mywayapp.model.UsuarioHabitos
+    usuarioHabito: Habitos
 ) {
     val habitName =
-        HabitName(usuarioHabito.uidHabito) // Llama al composable que obtiene el nombre real del hábito a partir del uid
+        usuarioHabito.nombre // Llama al composable que obtiene el nombre real del hábito a partir del uid
     val (progreso, progresoMaximo) = calcularProgreso(
         usuarioHabito.fechaInicio
     ) // Calculamos el progreso y el máximo
@@ -143,7 +126,7 @@ fun UsuarioHabitoItem(
             Space(8.dp)
 
             Text(
-                text = "Racha: $progreso de $progresoMaximo días",
+                text = "Racha: $progreso de $progresoMaximo día(s)",
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.Black
             )

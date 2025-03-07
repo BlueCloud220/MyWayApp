@@ -29,6 +29,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,16 +83,12 @@ fun ContentProfileView(
     navController: NavController,
     viewModel: UsuariosViewModel
 ) {
-    LaunchedEffect(Unit) {
-        viewModel.loadProfileIcons()
-    }
-
     val state = viewModel.state.collectAsState().value
     val nombreFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val iconos = viewModel.iconos.collectAsState().value
+    val iconosList by viewModel.iconos.collectAsState()
 
     Column(
         modifier = Modifier
@@ -145,7 +142,7 @@ fun ContentProfileView(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            items(iconos) { iconUrl ->
+            items(iconosList) { iconUrl ->
                 AsyncImage(
                     model = iconUrl,
                     contentDescription = "Icono",

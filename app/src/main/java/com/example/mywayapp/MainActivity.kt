@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.example.mywayapp.navigation.NavManager
 import com.example.mywayapp.ui.theme.MyWayAppTheme
 import com.example.mywayapp.viewModels.HabitosViewModel
+import com.example.mywayapp.viewModels.RecaidasViewModel
 import com.example.mywayapp.viewModels.UsuariosViewModel
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -21,13 +22,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val viewModelHabitos: HabitosViewModel by viewModels()
         val viewModelUsuarios: UsuariosViewModel by viewModels()
+        val viewModelHabitos: HabitosViewModel by viewModels()
+        val viewModelRecaidas: RecaidasViewModel by viewModels()
 
         viewModelUsuarios.usuario.observe(this) { usuario ->
             setContent {
                 MyWayAppTheme {
-                    NavManager(viewModelHabitos, viewModelUsuarios, usuario)
+                    NavManager(viewModelUsuarios, viewModelHabitos, viewModelRecaidas, usuario)
                 }
             }
 

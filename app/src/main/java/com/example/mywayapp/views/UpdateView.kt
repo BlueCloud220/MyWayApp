@@ -69,7 +69,7 @@ fun ContentUpdateView(
     viewModel: HabitosViewModel
 ) {
     LaunchedEffect(uidHabito) {
-        viewModel.loadHabito(uidHabito)
+        viewModel.loadHabit(uidHabito)
     }
 
     val state = viewModel.state.collectAsState().value
@@ -123,22 +123,22 @@ fun ContentUpdateView(
                 backColor = Color(0.129f, 0.302f, 0.986f, 1f),
                 color = Color(0.984f, 0.988f, 0.988f, 1f)
             ) {
-                if (state.nombre != "" && state.descripcion != "" && state.fechaInicio != "") {
-                    viewModel.updateHabito { success, message ->
-                        if (success) {
-                            Toast.makeText(
-                                context, message, Toast.LENGTH_SHORT
-                            ).show()
-                            viewModel.limpiar()
-                            navController.popBackStack()
-                        } else {
-                            Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } else {
-                    focusManager.moveFocus(FocusDirection.Down)
-                    viewModel.cambiaAlert()
-                }
+//                if (state.nombre != "" && state.descripcion != "" && state.fechaInicio != "") {
+//                    viewModel.updateHabito { success, message ->
+//                        if (success) {
+//                            Toast.makeText(
+//                                context, message, Toast.LENGTH_SHORT
+//                            ).show()
+//                            viewModel.limpiar()
+//                            navController.popBackStack()
+//                        } else {
+//                            Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                } else {
+//                    focusManager.moveFocus(FocusDirection.Down)
+//                    viewModel.cambiaAlert()
+//                }
             }
             SpaceW()
             MainButton(

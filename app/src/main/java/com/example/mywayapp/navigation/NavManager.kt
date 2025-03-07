@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
+import com.example.mywayapp.viewModels.RecaidasViewModel
 import com.example.mywayapp.viewModels.UsuariosViewModel
 import com.example.mywayapp.views.AddView
 import com.example.mywayapp.views.HomeView
@@ -21,8 +22,9 @@ import com.example.mywayapp.views.UpdateView
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavManager(
-    viewModelHabitos: HabitosViewModel,
     viewModelUsuarios: UsuariosViewModel,
+    viewModelHabitos: HabitosViewModel,
+    viewModelRecaidas: RecaidasViewModel,
     usuario: Usuarios
 ) {
     val navController = rememberNavController()

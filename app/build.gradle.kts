@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.foundation)
     implementation(libs.volley)
-    implementation(libs.accompanist.swiperefresh)
     implementation(libs.androidx.work.runtime.ktx)
 
     implementation(platform(libs.firebase.bom))

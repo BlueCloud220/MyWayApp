@@ -1,10 +1,11 @@
 package com.example.mywayapp.viewModels
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mywayapp.data.repository.HabitosRepository
 import com.example.mywayapp.model.Habitos
-import com.example.mywayapp.views.getTodayDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,6 +13,17 @@ import kotlinx.coroutines.launch
 class HabitosViewModel : ViewModel() {
 
     private val repository = HabitosRepository()
+
+    private val _uidUsuario = mutableStateOf("")
+    val uidUsuario: State<String> = _uidUsuario
+
+    fun onUsuarioCargado(uidUsuario: String) {
+        _uidUsuario.value = uidUsuario
+        if (uidUsuario.isNotEmpty()) {
+            fetchHabitsUser(uidUsuario)
+            fetchHabits()
+        }
+    }
 
     private val _state = MutableStateFlow(
         Habitos(
@@ -24,28 +36,37 @@ class HabitosViewModel : ViewModel() {
             fechaFin = ""
         )
     )
+
     val state: StateFlow<Habitos> = _state
 
+    private val _selectedHabito = mutableStateOf<Habitos?>(null)
+    val selectedHabito: State<Habitos?> = _selectedHabito
+
+    fun onHabitoSeleccionado(habito: Habitos) {
+        _state.value = _state.value.copy(
+            nombre = habito.nombre,
+            descripcion = habito.descripcion
+        )
+    }
+
     val habitos = repository.habitos
+    val habitosUsuario = repository.habitosUsuario
 
-    init {
-        if (state.value.fechaInicio.isEmpty()) {
-            onValueChange("fechaInicio", getTodayDate())
-        }
-        if (habitos.value.isEmpty()) {
-            fetchHabitos()
+    private fun fetchHabits() {
+        viewModelScope.launch {
+            repository.fetchHabits()
         }
     }
 
-    private fun fetchHabitos() {
+    private fun fetchHabitsUser(uidUsuario: String) {
         viewModelScope.launch {
-            repository.fetchHabitos()
+            repository.fetchHabitsUser(uidUsuario)
         }
     }
 
-    fun loadHabito(uidHabito: String) {
+    fun loadHabit(uidHabito: String) {
         viewModelScope.launch {
-            repository.fetchHabitoById(uidHabito)
+            repository.fetchHabitById(uidHabito)
             repository.habito.collect { habito ->
                 _state.value = habito
             }
@@ -53,20 +74,20 @@ class HabitosViewModel : ViewModel() {
     }
 
     // Guardar habito
-    fun saveHabito(onComplete: (Boolean, String) -> Unit) {
+    fun saveHabit(uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
         val habito = _state.value
-        repository.saveHabito(habito, onComplete)
+        repository.saveHabit(habito, uidUsuario, onComplete)
     }
 
     // Eliminar habito
-    fun deleteHabito(uidHabito: String, onComplete: (Boolean, String) -> Unit) {
-        repository.deleteHabito(uidHabito, onComplete)
+    fun deleteHabit(uidHabito: String, uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
+        repository.deleteHabit(uidHabito, uidUsuario, onComplete)
     }
 
     // Actualizar habito
-    fun updateHabito(onComplete: (Boolean, String) -> Unit) {
+    fun updateHabit(uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
         val habito = _state.value
-        repository.updateHabito(habito, onComplete)
+        repository.updateHabit(habito, uidUsuario, onComplete)
     }
 
     fun onValueChange(field: String, value: String) {

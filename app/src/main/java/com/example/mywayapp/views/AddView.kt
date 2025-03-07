@@ -21,19 +21,18 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.Alert
 import com.example.mywayapp.components.DatePickerDocked
 import com.example.mywayapp.components.HabitoDropdown
@@ -46,7 +45,6 @@ import com.example.mywayapp.components.TitleBar
 import com.example.mywayapp.model.Habitos
 import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
-import com.example.mywayapp.viewModels.UsuarioHabitosViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -55,17 +53,11 @@ import java.time.format.DateTimeFormatter
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun AddView(
-    navController: NavController,
-    habitosViewModel: HabitosViewModel,
-    usuario: Usuarios  // Recibimos el usuario logueado
+    navController: NavController, viewModel: HabitosViewModel, usuario: Usuarios
 ) {
-    val usuarioHabitosViewModel =
-        remember { UsuarioHabitosViewModel() } // Instanciamos el ViewModel para gestionar la relación usuario-hábito
-
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { TitleBar(name = "Agregar Hábito") },
+            CenterAlignedTopAppBar(title = { TitleBar(name = "Agregar Hábito") },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = Color(0f, 0.129f, 0.302f, 1f)
                 ),
@@ -73,16 +65,11 @@ fun AddView(
                     MainIconButton(icon = Icons.AutoMirrored.Filled.ArrowBack) {
                         navController.popBackStack()
                     }
-                }
-            )
-        }
+                })
+        },
     ) {
         ContentAddView(
-            paddingValues = it,
-            navController = navController,
-            habitosViewModel = habitosViewModel,
-            usuarioHabitosViewModel = usuarioHabitosViewModel,
-            usuario = usuario
+            paddingValues = it, navController, viewModel, usuario = usuario
         )
     }
 }
@@ -92,26 +79,20 @@ fun AddView(
 fun ContentAddView(
     paddingValues: PaddingValues,
     navController: NavController,
-    habitosViewModel: HabitosViewModel,
-    usuarioHabitosViewModel: UsuarioHabitosViewModel,
+    viewModel: HabitosViewModel,
     usuario: Usuarios
 ) {
-    val nombreFocusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
-    val habitosState = habitosViewModel.state.collectAsState().value
-    val usuarioHabitosState = usuarioHabitosViewModel.state.collectAsState().value
-    val context = LocalContext.current
+    val state = viewModel.state.collectAsState().value
     val scrollState = rememberScrollState()
+    val habitosList by viewModel.habitos.collectAsState()
+    var selectedHabito by remember { mutableStateOf<Habitos?>(null) }
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
-    val showErrorAlert =
-        rememberSaveable { mutableStateOf(false) } // Estados para controlar la alerta de error en el guardado
-    val errorAlertMessage = rememberSaveable { mutableStateOf("") }
-
-    LaunchedEffect(Unit) { // Actualizamos la fecha si está vacía para que el estado se actualice y pase la validación
-        if (habitosState.fechaInicio.isEmpty()) {
+    LaunchedEffect(Unit) {
+        if (state.fechaInicio.isEmpty()) {
             val today = getTodayDate()
-            habitosViewModel.onValueChange("fechaInicio", today)
-            usuarioHabitosViewModel.onValueChange("fechaInicio", today)
+            viewModel.onValueChange("fechaInicio", today)
         }
     }
 
@@ -123,75 +104,55 @@ fun ContentAddView(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val selectedNombre =
-            rememberSaveable { mutableStateOf(habitosState.nombre) } // Variables para almacenar la selección actual
-        val selectedDescripcion = rememberSaveable { mutableStateOf(habitosState.descripcion) }
-
-        HabitoDropdown(viewModel = habitosViewModel) { nombre, descripcion, uidHabito -> // Se asume que el callback del Dropdown retorna también el uid del hábito
-            selectedNombre.value = nombre
-            selectedDescripcion.value = descripcion
-            habitosViewModel.onValueChange("nombre", nombre)
-            habitosViewModel.onValueChange("descripcion", descripcion)
-            usuarioHabitosViewModel.onHabitoSeleccionado(
-                Habitos(uidHabito = uidHabito, nombre = nombre, descripcion = descripcion)
-            )
+        HabitoDropdown(habitosList) { uidHabito, nombre, descripcion ->
+            selectedHabito =
+                Habitos(uidHabito, nombre, descripcion)
         }
+
+        selectedHabito?.let { viewModel.onHabitoSeleccionado(it) }
 
         Space(10.dp)
 
         ReadOnlyTextField(
-            value = selectedDescripcion.value,
+            value = selectedHabito?.descripcion ?: "No hay descripción",
             label = "Descripción:"
         )
 
         Space(10.dp)
 
         DatePickerDocked(
-            value = habitosState.fechaInicio.ifEmpty { getTodayDate() },
+            value = state.fechaInicio.ifEmpty { getTodayDate() },
             label = "Fecha de inicio:",
             onValue = { date ->
-                habitosViewModel.onValueChange("fechaInicio", date)
-                usuarioHabitosViewModel.onValueChange("fechaInicio", date)
+                viewModel.onValueChange("fechaInicio", date)
             }
         )
 
         Space(20.dp)
 
         Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center
         ) {
             MainButton(
                 name = "Guardar",
                 backColor = Color(0.129f, 0.302f, 0.986f, 1f),
                 color = Color(0.984f, 0.988f, 0.988f, 1f)
             ) {
-                if (usuarioHabitosState.uidHabito.isNotEmpty() && usuarioHabitosState.fechaInicio.isNotEmpty()) {
-                    usuarioHabitosViewModel.onValueChange(
-                        "uidUsuario",
-                        usuario.uidUsuario
-                    ) // Asignamos el uid del usuario logueado al estado de usuario-hábito
-                    usuarioHabitosViewModel.saveUsuarioHabito { success, message ->
+                if (state.nombre != "" && state.descripcion != "" && state.fechaInicio != "") {
+                    viewModel.saveHabit(usuario.uidUsuario) { success, message ->
                         if (success) {
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                            habitosViewModel.limpiar()
-                            usuarioHabitosViewModel.limpiar()
+                            Toast.makeText(
+                                context, message, Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.limpiar()
                             navController.popBackStack()
-                            val fcmHelper = FCMHelper(context)
-                            fcmHelper.sendNotification(
-                                usuario.tokenFCM,
-                                "¡Felicidades!",
-                                "Acabas de comenzar un nuevo seguimiento de hábito."
-                            )
                         } else {
-                            // En caso de error, mostramos la alerta personalizada
-                            errorAlertMessage.value = message
-                            showErrorAlert.value = true
+                            Toast.makeText(context, "Error: $message", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
                     focusManager.moveFocus(FocusDirection.Down)
-                    habitosViewModel.cambiaAlert()
+                    viewModel.cambiaAlert()
                 }
             }
             SpaceW()
@@ -204,13 +165,13 @@ fun ContentAddView(
             }
         }
     }
-    if (showErrorAlert.value) {
-        Alert(
-            title = "¡Atención!",
-            message = errorAlertMessage.value,
+    if (state.showAlert) {
+        Alert(title = "¡Atención!",
+            message = "Todos los campos deben ser llenados.",
             confirmText = "Aceptar",
-            onConfirmClick = { showErrorAlert.value = false }
-        )
+            onConfirmClick = {
+                viewModel.cancelAlert()
+            }) { }
     }
 }
 
