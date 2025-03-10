@@ -67,7 +67,7 @@ fun HomeView(
         ContentHomeView(
             paddingValues = it,
             viewModelHabits,
-            viewModelUsers,
+            usuario,
             navController
         )
     }
@@ -78,7 +78,7 @@ fun HomeView(
 fun ContentHomeView(
     paddingValues: PaddingValues,
     viewModelHabits: HabitosViewModel,
-    viewModelUsers: UsuariosViewModel,
+    usuario: Usuarios,
     navController: NavController
 ) {
     val habitosList by viewModelHabits.habitosUsuario.collectAsState()
@@ -104,7 +104,7 @@ fun ContentHomeView(
             }
         } else {
             items(habitosList) { usuarioHabito ->
-                UsuarioHabitoItem(viewModelUsers, usuarioHabito, navController)
+                UsuarioHabitoItem(viewModelHabits, usuarioHabito, usuario, navController)
             }
         }
     }

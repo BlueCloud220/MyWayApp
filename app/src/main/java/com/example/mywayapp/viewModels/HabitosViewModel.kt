@@ -86,7 +86,14 @@ class HabitosViewModel : ViewModel() {
     // Actualizar habito
     fun updateHabit(uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
         val habito = _state.value
+
         repository.updateHabit(habito, uidUsuario, onComplete)
+    }
+
+    fun updateStreakHabit(rachaDias: Int, uidUsuario: String, onComplete: (Boolean, String) -> Unit) {
+        _state.value = _state.value.copy(rachaDias = rachaDias)
+
+        updateHabit(uidUsuario, onComplete)
     }
 
     fun onValueChange(field: String, value: String) {

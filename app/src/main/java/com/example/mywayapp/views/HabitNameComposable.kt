@@ -3,6 +3,7 @@ package com.example.mywayapp.views
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +19,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -28,7 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mywayapp.components.Space
 import com.example.mywayapp.model.Habitos
-import com.example.mywayapp.viewModels.UsuariosViewModel
+import com.example.mywayapp.model.Usuarios
+import com.example.mywayapp.viewModels.HabitosViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -36,8 +38,9 @@ import java.time.temporal.ChronoUnit
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun UsuarioHabitoItem(
-    viewModel: UsuariosViewModel,
+    viewModel: HabitosViewModel,
     usuarioHabito: Habitos,
+    usuario: Usuarios,
     navController: NavController
 ) {
     val habitName =
@@ -62,16 +65,36 @@ fun UsuarioHabitoItem(
     val fechaMeta = calcularFechaMeta(usuarioHabito.fechaInicio, progresoMaximo)
 
     val context = LocalContext.current
-    val state = viewModel.state.collectAsState().value
-    val tokenFCM = state.tokenFCM
 
-    // Obtener SharedPreferences
-    val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
+    LaunchedEffect(progreso) {
+        // Obtener SharedPreferences
+        val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
 
-    // Guardar el valor actual de diasTranscurridos para futuras comparaciones
-    val editor: SharedPreferences.Editor = sharedPref.edit()
-    editor.putInt("diasTranscurridos", progreso)
-    editor.apply() // Guarda el valor de forma asíncrona
+        // Obtener el valor almacenado de diasTranscurridos
+        val diasTranscurridosGuardado = sharedPref.getInt(
+            "diasTranscurridos",
+            -1
+        ) // -1 es el valor por defecto si no está almacenado
+
+        // Comparar el valor almacenado con el valor calculado
+        if (diasTranscurridosGuardado != progreso) {
+            viewModel.onValueChange("uidHabito", usuarioHabito.uidHabito)
+            viewModel.onValueChange("nombre", usuarioHabito.nombre)
+            viewModel.onValueChange("descripcion", usuarioHabito.descripcion)
+            viewModel.onValueChange("fechaInicio", usuarioHabito.fechaInicio)
+            // Si son diferentes, actualizar el streak
+            viewModel.updateStreakHabit(
+                rachaDias = progreso,
+                usuario.uidUsuario
+            ) { success, message ->
+            }
+
+            // Guardar el nuevo valor de diasTranscurridos
+            val editor: SharedPreferences.Editor = sharedPref.edit()
+            editor.putInt("diasTranscurridos", progreso)
+            editor.apply() // Guarda el valor de forma asíncrona
+        }
+    }
 
     Card(
         modifier = Modifier

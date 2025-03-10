@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.mywayapp.FCMHelper
 import com.example.mywayapp.components.AlertOutlinedTextField
 import com.example.mywayapp.components.CalendarWithHabitTracking
 import com.example.mywayapp.components.MainIconButton
@@ -117,7 +118,6 @@ fun ContentUpdateView(
     val completedDaysLocalDate = completedDays.mapNotNull { dateStr ->
         runCatching { LocalDate.parse(dateStr, formatter) }.getOrNull()
     }
-    println("completedDaysLocalDate: $completedDaysLocalDate")
 
     Column(
         modifier = Modifier
@@ -171,6 +171,12 @@ fun ContentUpdateView(
                                 Toast.makeText(
                                     context, message, Toast.LENGTH_SHORT
                                 ).show()
+                                val fcmHelper = FCMHelper(context)
+                                fcmHelper.sendNotification(
+                                    usuario.tokenFCM,
+                                    "¡No te rindas!",
+                                    "Las recaídas son parte del proceso. Levántate y sigue adelante. ¡Tú eres más fuerte que esto!"
+                                )
                             } else {
                                 Toast.makeText(
                                     context, message, Toast.LENGTH_SHORT

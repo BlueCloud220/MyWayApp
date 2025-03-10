@@ -8,7 +8,6 @@ import com.example.mywayapp.data.repository.RecaidasRepository
 import com.example.mywayapp.model.Recaidas
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RecaidasViewModel : ViewModel() {
