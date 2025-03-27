@@ -8,6 +8,7 @@ import com.example.mywayapp.data.repository.UsuariosRepository
 import com.example.mywayapp.model.Usuarios
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class UsuariosViewModel : ViewModel() {
@@ -27,8 +28,6 @@ class UsuariosViewModel : ViewModel() {
     )
     val state: StateFlow<Usuarios> = _state
 
-    val usuarios = repository.usuarios
-
     private val _usuario = MutableLiveData<Usuarios>()
     val usuario: LiveData<Usuarios> get() = _usuario
 
@@ -38,36 +37,44 @@ class UsuariosViewModel : ViewModel() {
                 _usuario.postValue(usuario)
             }
         }
+        loadProfileIcons()
     }
 
-    fun loadUsuarioAuth(nombreUsuario: String, contrasena: String): Boolean {
-        var result = false
+    private val _authSuccess = MutableStateFlow(false)
+    val authSuccess: StateFlow<Boolean> = _authSuccess
+    private val _authError = MutableStateFlow(false)
+    val authError: StateFlow<Boolean> get() = _authError
+
+    fun loadUsuarioAuth(nombreUsuario: String, contrasena: String) {
         viewModelScope.launch {
             repository.fetchUsuarioByCredentials(nombreUsuario, contrasena)
             repository.usuario.collect { usuario ->
                 if (usuario.uidUsuario.isNotEmpty()) {
+                    _authSuccess.value = true
                     _state.value = usuario
-                    result = true
+                    _authError.value = false
+                } else {
+                    _authSuccess.value = false
+                    _authError.value = true
                 }
             }
         }
-        return result
     }
 
-//    fun loadUsuarioAuth() {
-//        viewModelScope.launch {
-//            repository.fetchUsuarioAuth()
-//        }
-//    }
-//
-//    fun loadUsuario(uidUsuario: String) {
-//        viewModelScope.launch {
-//            repository.fetchUsuarioById(uidUsuario)
-//            repository.usuario.collect { usuario ->
-//                _state.value = usuario
-//            }
-//        }
-//    }
+    private val _iconos = MutableStateFlow<List<String>>(emptyList())
+    val iconos: StateFlow<List<String>> = _iconos.asStateFlow()
+
+    private var lastFetchedIcons: List<String> = emptyList()
+
+    fun loadProfileIcons() {
+        viewModelScope.launch {
+            val nuevosIconos = repository.fetchProfileIcons()
+            if (nuevosIconos != lastFetchedIcons) {
+                _iconos.value = nuevosIconos
+                lastFetchedIcons = nuevosIconos
+            }
+        }
+    }
 
     // Guardar usuario
     fun saveUsuario(onComplete: (Boolean, String) -> Unit) {
@@ -85,6 +92,21 @@ class UsuariosViewModel : ViewModel() {
         val usuario = _state.value
         repository.updateUsuario(usuario, onComplete)
     }
+
+    // Actualizar el token FCM
+    fun updateIconProfile(iconUrl: String, onComplete: (Boolean, String) -> Unit) {
+        _state.value = _state.value.copy(iconoPerfil = iconUrl)
+
+        updateUsuario(onComplete)
+    }
+
+    // Actualizar el token FCM
+    fun updateTokenFCM(token: String, onComplete: (Boolean, String) -> Unit) {
+        _state.value = _state.value.copy(tokenFCM = token)
+
+        updateUsuario(onComplete)
+    }
+
 
     fun onValueChange(field: String, value: String) {
         _state.value = when (field) {

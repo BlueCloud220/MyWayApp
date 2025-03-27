@@ -1,5 +1,7 @@
 package com.example.mywayapp.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -8,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.mywayapp.model.Usuarios
 import com.example.mywayapp.viewModels.HabitosViewModel
+import com.example.mywayapp.viewModels.RecaidasViewModel
 import com.example.mywayapp.viewModels.UsuariosViewModel
 import com.example.mywayapp.views.AddView
 import com.example.mywayapp.views.HomeView
@@ -16,10 +19,12 @@ import com.example.mywayapp.views.ProfileView
 import com.example.mywayapp.views.RegisterView
 import com.example.mywayapp.views.UpdateView
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavManager(
-    viewModelHabitos: HabitosViewModel,
     viewModelUsuarios: UsuariosViewModel,
+    viewModelHabitos: HabitosViewModel,
+    viewModelRecaidas: RecaidasViewModel,
     usuario: Usuarios
 ) {
     val navController = rememberNavController()
@@ -34,11 +39,11 @@ fun NavManager(
         }
 
         composable("Home") {
-            HomeView(navController, viewModelHabitos, usuario)
+            HomeView(navController, viewModelHabitos, viewModelUsuarios, usuario)
         }
 
         composable("Add") {
-            AddView(navController, viewModelHabitos)
+            AddView(navController, viewModelHabitos, usuario)
         }
 
         composable(
@@ -46,15 +51,14 @@ fun NavManager(
             arguments = listOf(navArgument("uidHabito") { type = NavType.StringType })
         ) { backStackEntry ->
             val uidHabito = backStackEntry.arguments?.getString("uidHabito") ?: ""
-            UpdateView(navController, uidHabito, viewModelHabitos)
+            UpdateView(navController, uidHabito, usuario, viewModelHabitos, viewModelRecaidas)
         }
 
         composable(
             route = "UpdateProfile/{uidUsuario}",
             arguments = listOf(navArgument("uidUsuario") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val uidUsuario = backStackEntry.arguments?.getString("uidUsuario") ?: ""
-            ProfileView(navController, uidUsuario, viewModelUsuarios)
+        ) {
+            ProfileView(navController, viewModelUsuarios)
         }
 
     }

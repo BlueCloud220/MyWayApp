@@ -1,74 +1,85 @@
 package com.example.mywayapp.data.repository
 
+import android.annotation.SuppressLint
 import com.example.mywayapp.model.Usuarios
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.resume
 
 object FirebaseManagerUsuarios {
+    @SuppressLint("StaticFieldLeak")
     private val db = FirebaseFirestore.getInstance()
+    private val storageRef = FirebaseStorage.getInstance()
 
     fun getUserCollection(): CollectionReference = db.collection("usuarios")
+    fun getIconsCollection(): StorageReference = storageRef.reference.child("iconosPerfil")
 }
 
 class UsuariosRepository {
 
     private val collectionRef = FirebaseManagerUsuarios.getUserCollection()
-
-    private val _usuarios = MutableStateFlow<List<Usuarios>>(emptyList())
-    val usuarios: StateFlow<List<Usuarios>> = _usuarios
+    private val collectionIconsRef = FirebaseManagerUsuarios.getIconsCollection()
 
     private val _usuario = MutableStateFlow(Usuarios())
     val usuario: StateFlow<Usuarios> = _usuario
 
-    fun fetchUsuarioAuth() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
+    private val _iconos = MutableStateFlow<List<String>>(emptyList())
+    val iconos: StateFlow<List<String>> = _iconos
 
-        if (currentUser != null) {
-            collectionRef.document(currentUser.uid).get()
-                .addOnSuccessListener { snapshot ->
-                    val usuario = snapshot.toObject<Usuarios>()
-                    _usuario.value = usuario ?: Usuarios()
+    suspend fun fetchProfileIcons(): List<String> {
+        return suspendCancellableCoroutine { continuation ->
+            collectionIconsRef.listAll()
+                .addOnSuccessListener { listResult ->
+                    val urls = mutableListOf<String>()
+                    val tasks = listResult.items.map { item ->
+                        item.downloadUrl.addOnSuccessListener { uri ->
+                            urls.add(uri.toString())
+                            if (urls.size == listResult.items.size) {
+                                continuation.resume(urls)
+                            }
+                        }
+                    }
+                    if (tasks.isEmpty()) continuation.resume(emptyList())
                 }
                 .addOnFailureListener {
-                    _usuario.value = Usuarios()
+                    continuation.resume(emptyList())
                 }
         }
     }
 
-    fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
-        collectionRef.whereEqualTo("nombreUsuario", nombreUsuario)
-            .whereEqualTo("contrasena", password).get()
-            .addOnSuccessListener { snapshot ->
-                val usuario = snapshot.documents.firstOrNull()?.toObject<Usuarios>()
-                _usuario.value = usuario ?: Usuarios()
-            }
-            .addOnFailureListener {
-                _usuario.value = Usuarios()
-            }
-    }
+    suspend fun fetchUsuarioByCredentials(nombreUsuario: String, password: String) {
+        try {
+            // Llamada a Firebase con Tasks.await() para hacer la llamada asincrónica
+            val snapshot = collectionRef
+                .whereEqualTo("nombreUsuario", nombreUsuario)
+                .whereEqualTo("contrasena", password)
+                .get()
+                .await()  // Esto convierte el callback en un comportamiento asincrónico
 
-//    fun fetchUsuarioById(uidUsuario: String) {
-//        collectionRef.document(uidUsuario).get()
-//            .addOnSuccessListener { snapshot ->
-//                val usuario = snapshot.toObject<Usuarios>()
-//                _usuario.value = usuario ?: Usuarios()
-//            }
-//            .addOnFailureListener {
-//                _usuario.value = Usuarios()
-//            }
-//    }
+            // Procesar los resultados de la consulta
+            val usuario = snapshot.documents.firstOrNull()?.toObject<Usuarios>()
+            _usuario.value = usuario ?: Usuarios()
+        } catch (e: Exception) {
+            // Manejo de errores, por ejemplo, si la conexión a la base de datos falla
+            _usuario.value = Usuarios()
+            println("Error fetching usuario: ${e.message}")
+        }
+    }
 
     fun saveUsuario(usuario: Usuarios, onComplete: (Boolean, String) -> Unit) {
         val batch = FirebaseFirestore.getInstance().batch()
 
-        val newDocRef = collectionRef.document()
-        batch.set(newDocRef, usuario)
-
+        val newDocRef =
+            collectionRef.document()
         val updatedUsuario = usuario.copy(uidUsuario = newDocRef.id)
+
         batch.set(newDocRef, updatedUsuario)
 
         batch.commit()
@@ -91,12 +102,18 @@ class UsuariosRepository {
     }
 
     fun updateUsuario(usuario: Usuarios, onComplete: (Boolean, String) -> Unit) {
-        collectionRef.document(usuario.uidUsuario).set(usuario)
-            .addOnSuccessListener {
-                onComplete(true, "Perfil editado con éxito")
-            }
-            .addOnFailureListener { exception ->
-                onComplete(false, exception.message ?: "Error desconocido")
-            }
+        if (usuario.uidUsuario.isNotEmpty()) {
+            collectionRef.document(usuario.uidUsuario)
+                .set(usuario)
+                .addOnSuccessListener {
+                    onComplete(true, "Perfil editado con éxito")
+                }
+                .addOnFailureListener { exception ->
+                    onComplete(false, exception.message ?: "Error desconocido")
+                }
+        } else {
+            onComplete(false, "El ID de usuario es inválido.")
+        }
     }
+
 }
