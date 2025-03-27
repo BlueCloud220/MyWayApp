@@ -1,6 +1,6 @@
 package com.example.mywayapp.data.repository
 
-import com.example.mywayapp.model.Habitos
+import android.annotation.SuppressLint
 import com.example.mywayapp.model.Recaidas
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -9,17 +9,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 object FirebaseManagerRecaidas {
+    @SuppressLint("StaticFieldLeak")
     private val db = FirebaseFirestore.getInstance()
 
     fun getUserCollection(): CollectionReference = db.collection("usuarios")
-    fun getHabitsCollection(): CollectionReference = db.collection("habitos")
-    fun getRelapsesCollection(): CollectionReference = db.collection("recaidas")
 }
 
 class RecaidasRepository {
     private val collectionRelapsesRef = FirebaseManagerHabitos.getHabitsCollection()
 
-    fun getUserRelapsesCollection(uidUsuario: String, uidHabito: String): CollectionReference {
+    private fun getUserRelapsesCollection(
+        uidUsuario: String,
+        uidHabito: String
+    ): CollectionReference {
         return FirebaseManagerRecaidas.getUserCollection()
             .document(uidUsuario)
             .collection("habitos")

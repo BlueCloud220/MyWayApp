@@ -1,5 +1,6 @@
 package com.example.mywayapp.data.repository
 
+import android.annotation.SuppressLint
 import com.example.mywayapp.model.Usuarios
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,6 +14,7 @@ import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.resume
 
 object FirebaseManagerUsuarios {
+    @SuppressLint("StaticFieldLeak")
     private val db = FirebaseFirestore.getInstance()
     private val storageRef = FirebaseStorage.getInstance()
 

@@ -57,7 +57,7 @@ fun NavManager(
         composable(
             route = "UpdateProfile/{uidUsuario}",
             arguments = listOf(navArgument("uidUsuario") { type = NavType.StringType })
-        ) { backStackEntry ->
+        ) {
             ProfileView(navController, viewModelUsuarios)
         }
 

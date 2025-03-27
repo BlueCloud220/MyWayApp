@@ -57,11 +57,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mywayapp.model.Habitos
-import com.example.mywayapp.model.Recaidas
 import com.example.mywayapp.ui.theme.Purple80
 import com.example.mywayapp.viewModels.RecaidasViewModel
 import java.text.SimpleDateFormat
@@ -80,7 +80,7 @@ fun Space(size: Dp) {
 }
 
 @Composable
-fun SpaceW(size: Dp = 35.dp) {
+fun SpaceW(size: Dp = 25.dp) {
     Spacer(modifier = Modifier.width(size))
 }
 
@@ -120,7 +120,7 @@ fun MainTextField(
 @Composable
 fun MainButton(name: String, backColor: Color, color: Color, onClick: () -> Unit) {
     Button(
-        modifier = Modifier.width(135.dp), onClick = onClick, colors = ButtonDefaults.buttonColors(
+        modifier = Modifier.width(125.dp), onClick = onClick, colors = ButtonDefaults.buttonColors(
             contentColor = color, containerColor = backColor
         )
     ) {
@@ -217,11 +217,12 @@ fun AlertOutlinedTextField(
         title = { Text(text = title, color = Color.Red, fontWeight = FontWeight.Bold) },
         text = {
             Column {
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "A continuación escriba o justifique el motivo de su recaída:", textAlign = TextAlign.Justify)
+                Space(5.dp)
                 OutlinedTextField(
                     value = state.motivo,
                     onValueChange = { viewModelRelapses.onValueChange("motivo", it) },
-                    label = { Text("Motivo de su recaída:") },
+                    label = { Text("Motivo de la recaída:") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -445,7 +446,7 @@ fun CalendarWithHabitTracking(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(1.dp)
+            .padding(10.dp)
             .shadow(4.dp, shape = MaterialTheme.shapes.medium),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -499,8 +500,8 @@ fun CalendarWithHabitTracking(
                             .background(
                                 when {
                                     isStartHabit -> Color(0f, 0.129f, 0.302f, 1f)
-                                    isRelapse -> Color(0xFFF44336) // Rojo
-                                    isCompleted -> Color(0xFF4CAF50) // Verde
+                                    isRelapse -> Color(1f, 0.329f, 0.439f, 1f)
+                                    isCompleted -> Color(0f, 0.922f, 0.780f, 1f)
                                     else -> Color.LightGray
                                 }
                             ),
@@ -525,7 +526,7 @@ fun RelapseButton(name: String, backColor: Color, onClick: () -> Unit) {
         colors = ButtonDefaults.buttonColors(containerColor = backColor),
         shape = CircleShape,
         modifier = Modifier
-            .size(200.dp)
+            .size(185.dp)
             .shadow(8.dp, shape = CircleShape)
     ) {
         Text(

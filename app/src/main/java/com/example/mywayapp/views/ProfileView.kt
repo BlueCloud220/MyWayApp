@@ -27,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -152,7 +151,7 @@ fun ContentProfileView(
                         .background(Color.LightGray)
                         .clickable {
                             viewModel.updateIconProfile(iconUrl) { success, message ->
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Foto de perfil editada correctamente", Toast.LENGTH_SHORT).show()
                             }
                         },
                     contentScale = ContentScale.Crop
@@ -165,10 +164,10 @@ fun ContentProfileView(
         MainTextField(
             value = state.nombre,
             onValue = { viewModel.onValueChange("nombre", it) },
-            label = "Nombre:",
+            label = "Nombre(s):",
             keyboardType = KeyboardType.Text,
             focusRequester = nombreFocusRequester,
-            maxLength = 9
+            maxLength = 50
         )
 
         Space(10.dp)

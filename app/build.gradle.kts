@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.androidx.core.i18n)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

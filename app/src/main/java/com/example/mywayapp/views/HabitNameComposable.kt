@@ -70,30 +70,35 @@ fun UsuarioHabitoItem(
         // Obtener SharedPreferences
         val sharedPref = context.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE)
 
-        // Obtener el valor almacenado de diasTranscurridos
-        val diasTranscurridosGuardado = sharedPref.getInt(
-            "diasTranscurridos",
-            -1
-        ) // -1 es el valor por defecto si no está almacenado
+        // Generar la clave única con el uid del hábito
+        val key = "diasTranscurridos_${usuarioHabito.uidHabito}"
 
-        // Comparar el valor almacenado con el valor calculado
+        // Obtener el valor almacenado de diasTranscurridos para este hábito
+        val diasTranscurridosGuardado = sharedPref.getInt(key, -1) // -1 si no está almacenado
+
+        viewModel.onValueChange("uidHabito", usuarioHabito.uidHabito)
+        viewModel.onValueChange("nombre", usuarioHabito.nombre)
+        viewModel.onValueChange("descripcion", usuarioHabito.descripcion)
+        viewModel.onValueChange("fechaInicio", usuarioHabito.fechaInicio)
+
         if (diasTranscurridosGuardado != progreso) {
-            viewModel.onValueChange("uidHabito", usuarioHabito.uidHabito)
-            viewModel.onValueChange("nombre", usuarioHabito.nombre)
-            viewModel.onValueChange("descripcion", usuarioHabito.descripcion)
-            viewModel.onValueChange("fechaInicio", usuarioHabito.fechaInicio)
-            // Si son diferentes, actualizar el streak
             viewModel.updateStreakHabit(
                 rachaDias = progreso,
                 usuario.uidUsuario
             ) { success, message ->
             }
-
-            // Guardar el nuevo valor de diasTranscurridos
-            val editor: SharedPreferences.Editor = sharedPref.edit()
-            editor.putInt("diasTranscurridos", progreso)
-            editor.apply() // Guarda el valor de forma asíncrona
+        } else if(usuarioHabito.rachaDias < progreso) {
+            viewModel.updateStreakHabit(
+                rachaDias = usuarioHabito.rachaDias,
+                usuario.uidUsuario
+            ) { success, message ->
+            }
         }
+
+        // Guardar el nuevo valor de diasTranscurridos
+        val editor: SharedPreferences.Editor = sharedPref.edit()
+        editor.putInt("diasTranscurridos", progreso)
+        editor.apply() // Guarda el valor de forma asíncrona
     }
 
     Card(
